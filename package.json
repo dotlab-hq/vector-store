@@ -1,8 +1,0 @@
-{
-  "name": "vector-store",
-  "private": true,
-  "dependencies": {
-    "lucide": "^0.487.0",
-    "lucide-react": "^0.487.0"
-  }
-}
