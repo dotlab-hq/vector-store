@@ -1,0 +1,355 @@
+{
+    "query": "What is the goal of this plan?",
+    "answer": "The goal of this plan is to build a production-grade RAG (Retrieval-Augmented Generation) platform that can handle 10M+ documents while delivering source-grounded, citation-backed answers without hallucination [2]. Specifically, the platform is designed to be capable of handling 10M+ documents, maintaining <2.5s response latency, providing source-grounded answers, performing hallucination detection, supporting multi-hop reasoning, enabling continuous self-improvement, ensuring enterprise auditability, and supporting multi-tenancy [2]. A key exemplar of the intended capability is answering complex, multi-faceted enterprise questions such as \"What changed in policy X after regulation Y and how does it impact division Z?\" without hallucinating or losing citations [2]. The architecture achieves this through components like query understanding, multi-retriever fusion, a faithfulness verification layer, a citation engine, and a continuous learning flywheel [3][4].",
+    "short_answer": "The goal is to build a production-grade enterprise RAG platform handling 10M+ documents that delivers source-grounded, citation-backed answers to complex multi-hop questions without hallucination.",
+    "citations": [
+        {
+            "id": 1,
+            "source_id": "tmp7crndkya_p0",
+            "chunk_id": "tmp7crndkya_p0_c1",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "The system should answer: \"What changed in policy X after regulation Y and how does it impact division Z?\" without hallucinating or losing citations. 2. High-Level Architecture User │ ▼ Query Understanding Agent │ ▼ Int…",
+            "relevance_score": -8.62841796875
+        },
+        {
+            "id": 2,
+            "source_id": "tmp7crndkya_p0",
+            "chunk_id": "tmp7crndkya_p0",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "# PRD: Enterprise-Grade RAG Platform (10M+ Documents) Stack Python 3.12 LangGraph (orchestration) LangChain (retrievers, embeddings, document loaders) LangSmith (observability, evals, tracing) DeepAgents (specialized re…",
+            "relevance_score": -10.082136154174805
+        },
+        {
+            "id": 3,
+            "source_id": "tmp7crndkya_p1",
+            "chunk_id": "tmp7crndkya_p1",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "Build final prompt context. Rules: No duplicate chunks Preserve chronology Merge sibling chunks Token budget enforcement 11. Stage 9 — Generation Layer LangGraph Generation Agent. Constraints: Answer ONLY from provided…",
+            "relevance_score": -10.396222114562988
+        },
+        {
+            "id": 4,
+            "source_id": "tmp7crndkya_p1",
+            "chunk_id": "tmp7crndkya_p1_c3",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "This is roughly the architecture you'd expect for a modern enterprise RAG system rather than a basic \"BM25 + vector + reranker\" pipeline. The biggest differentiators are query understanding, multi-retriever fusion, fait…",
+            "relevance_score": -10.678936958312988
+        },
+        {
+            "id": 5,
+            "source_id": "tmp7crndkya_p1",
+            "chunk_id": "tmp7crndkya_p1_c5",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "Cons: Slow Production faiss.IndexHNSWFlat Pros: Fast Excellent recall Usually best first production choice. Very Large Scale faiss.IndexIVFPQ Pros: Smaller memory footprint Faster Cons: Lower recall More tuning LangGrap…",
+            "relevance_score": -11.000800132751465
+        },
+        {
+            "id": 6,
+            "source_id": "tmp7crndkya_p0",
+            "chunk_id": "tmp7crndkya_p0_c4",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "Subqueries: Q1 Regulation Y changes Q2 Policy X changes Q3 Impact on Division Z 7. Stage 5 — Retrieval Layer Use multiple retrievers simultaneously. DeepAgent Retrieval Team Agent 1 Dense Retriever Agent 2 BM25 Retrieve…",
+            "relevance_score": -11.031599998474121
+        },
+        {
+            "id": 7,
+            "source_id": "tmp7crndkya_p0",
+            "chunk_id": "tmp7crndkya_p0_c3",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "Maintain multiple indexes. BM25 Keyword matching. Good for: error code 0x8007 invoice number SKU123 Dense Vector Semantic retrieval. Model examples: bge-large gte-large e5-large SPLADE Learned sparse retrieval. Benefits…",
+            "relevance_score": -11.108247756958008
+        },
+        {
+            "id": 8,
+            "source_id": "tmp7crndkya_p1",
+            "chunk_id": "tmp7crndkya_p1_c2",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "Sample: 5% production traffic Run shadow pipeline. Compare: Pipeline A vs Pipeline B 16. Stage 14 — Observability LangSmith + OpenTelemetry. Track: Retrieval latency Rerank latency Generation latency Faithfulness failur…",
+            "relevance_score": -11.108353614807129
+        },
+        {
+            "id": 9,
+            "source_id": "tmp7crndkya_p1",
+            "chunk_id": "tmp7crndkya_p1_c0",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "Build final prompt context. Rules: No duplicate chunks Preserve chronology Merge sibling chunks Token budget enforcement 11. Stage 9 — Generation Layer LangGraph Generation Agent. Constraints: Answer ONLY from provided…",
+            "relevance_score": -11.111502647399902
+        },
+        {
+            "id": 10,
+            "source_id": "tmp7crndkya_p2",
+            "chunk_id": "tmp7crndkya_p2",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "snippet": "class VectorStore(ABC): @abstractmethod def search(self, query_embedding): pass @abstractmethod def insert(self, vectors): pass Implement: FaissVectorStore QdrantVectorStore WeaviateVectorStore MilvusVectorStore PgVecto…",
+            "relevance_score": -11.126943588256836
+        }
+    ],
+    "sources": [
+        {
+            "source_id": "tmp7crndkya_p0",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "url": null,
+            "download_url": "http://localhost:8000/documents/tmp7crndkya/download"
+        },
+        {
+            "source_id": "tmp7crndkya_p1",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "url": null,
+            "download_url": "http://localhost:8000/documents/tmp7crndkya/download"
+        },
+        {
+            "source_id": "tmp7crndkya_p2",
+            "document_id": "tmp7crndkya",
+            "document_name": "Plan",
+            "page": null,
+            "title": "Plan",
+            "url": null,
+            "download_url": "http://localhost:8000/documents/tmp7crndkya/download"
+        }
+    ],
+    "retrieval": {
+        "query_rewrites": [
+            "What is the goal of this plan?"
+        ],
+        "retrieved_chunks": [
+            {
+                "chunk_id": "tmp7crndkya_p0_c1",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 1,
+                "score": 0.03149801587301587,
+                "content": "The system should answer:\n\n\"What changed in policy X after regulation Y and how does it impact division Z?\"\n\nwithout hallucinating or losing citations.\n\n2. High-Level Architecture\n   User\n   │\n   ▼\n   Query Understanding Agent\n   │\n   ▼\n   Intent Router\n   │\n   ├── Simple Retrieval\n   ├── Multi-Hop Retrieval\n   ├── Analytical Reasoning\n   └── KG Traversal\n   │\n   ▼\n   Hybrid Retrieval Layer\n   │\n   ├── BM25\n   ├── Dense\n   ├── SPLADE\n   └── Knowledge Graph\n   │\n   ▼\n   Fusion Layer (RRF)\n   │\n   ▼\n   Compression Layer\n   │\n   ▼\n   Reranking Layer\n   │\n   ▼\n   Context Builder\n   │\n   ▼\n   Generation Agent\n   │\n   ▼\n   Faithfulness Verification\n   │\n   ▼\n   Citation Builder\n   │\n   ▼\n   Response\n3. Stage 1 — Ingestion Pipeline\n   Goal\n\nConvert raw enterprise documents into searchable knowledge."
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 2,
+                "score": 0.03128054740957967,
+                "content": "# PRD: Enterprise-Grade RAG Platform (10M+ Documents)\n\nStack\n\nPython 3.12\nLangGraph (orchestration)\nLangChain (retrievers, embeddings, document loaders)\nLangSmith (observability, evals, tracing)\nDeepAgents (specialized retrieval/reasoning agents)\nPostgreSQL + pgvector\nRedis\nElasticsearch/OpenSearch\nNeo4j (Knowledge Graph)\nS3/MinIO\nKafka/NATS\nFastAPI\nKubernetes\n\n1. Product Vision\n\nBuild a production-grade RAG platform capable of:\n\n10M+ documents\n<2.5s response latency\nSource-grounded answers\nHallucination detection\nMulti-hop reasoning\nContinuous self-improvement\nEnterprise auditability\nMulti-tenant support\n\nThe system should answer:\n\n\"What changed in policy X after regulation Y and how does it impact division Z?\"\n\nwithout hallucinating or losing citations.\n\n2. High-Level Architecture\n   User\n   │\n   ▼\n   Query Understanding Agent\n   │\n   ▼\n   Intent Router\n   │\n   ├── Simple Retrieval\n   ├── Multi-Hop Retrieval\n   ├── Analytical Reasoning\n   └── KG Traversal\n   │\n   ▼\n   Hybrid Retrieval Layer\n   │\n   ├── BM25\n   ├── Dense\n   ├── SPLADE\n   └── Knowledge Graph\n   │\n   ▼\n   Fusion Layer (RRF)\n   │\n   ▼\n   Compression Layer\n   │\n   ▼\n   Reranking Layer\n   │\n   ▼\n   Context Builder\n   │\n   ▼\n   Generation Agent\n   │\n   ▼\n   Faithfulness Verification\n   │\n   ▼\n   Citation Builder\n   │\n   ▼\n   Response\n3. Stage 1 — Ingestion Pipeline\n   Goal\n\nConvert raw enterprise documents into searchable knowledge.\n\nSupported Sources\nPDF\nDOCX\nPPTX\nWiki\nConfluence\nSharePoint\nEmails\nDatabases\nAPIs\nGit repositories\nProcessing Flow\nRaw Document\n↓\nNormalization\n↓\nDeduplication\n↓\nMetadata Extraction\n↓\nChunking\n↓\nEmbedding\n↓\nIndexing\nMetadata\n\nStore:\n\n{\n\"document_id\": \"...\",\n\"title\": \"...\",\n\"created_at\": \"...\",\n\"updated_at\": \"...\",\n\"author\": \"...\",\n\"department\": \"...\",\n\"entities\": [...],\n\"version\": \"...\",\n\"tags\": [...]\n} 4. Stage 2 — Chunking Service\nProblem\n\nFixed token chunking breaks semantic meaning.\n\nSemantic Chunking\n\nSplit on:\n\nHeading\nParagraph\nSection\nSentence boundaries\n\nNever arbitrary token windows.\n\nParent Child Retrieval\nParent Chunk\n512-1024 tokens\n\n├─ Child A\n├─ Child B\n├─ Child C\n\nRetrieve:\n\nChild\n\nGenerate using:\n\nParent\nChunk Metadata\n{\n\"chunk_id\": \"...\",\n\"parent_id\": \"...\",\n\"page\": 17,\n\"position\": 4,\n\"entities\": [...],\n\"section\": \"Risk Analysis\"\n} 5. Stage 3 — Indexing Layer\n\nMaintain multiple indexes.\n\nBM25\n\nKeyword matching.\n\nGood for:\n\nerror code 0x8007\ninvoice number\nSKU123\nDense Vector\n\nSemantic retrieval.\n\nModel examples:\n\nbge-large\ngte-large\ne5-large\nSPLADE\n\nLearned sparse retrieval.\n\nBenefits:\n\nBetter than BM25\nCaptures semantic expansion\nKnowledge Graph\n\nNeo4j.\n\nCompany\n├─ owns\n│\n▼\nProduct\n├─ regulated_by\n▼\nPolicy\n\nSupports relationship retrieval.\n\n6. Stage 4 — Query Understanding Layer\n\nLangGraph Agent.\n\nIntent Classification\n\nClassify:\n\nSimple\nMultiHop\nAnalytical\nComparative\nTemporal\nKGQuery\nQuery Rewriting\n\nExample:\n\n\"What changed?\"\n\nbecomes\n\n\"What changes occurred in Policy X between\n2024 and 2025?\"\nHyDE\n\nGenerate hypothetical answer.\n\nQuestion\n↓\nHypothetical Answer\n↓\nEmbedding\n↓\nRetrieval\n\nImproves recall.\n\nQuery Decomposition\n\nExample:\n\nWhat changed after regulation Y and how\ndid it impact division Z?\n\nSubqueries:\n\nQ1 Regulation Y changes\nQ2 Policy X changes\nQ3 Impact on Division Z 7. Stage 5 — Retrieval Layer\n\nUse multiple retrievers simultaneously.\n\nDeepAgent Retrieval Team\nAgent 1\n\nDense Retriever\n\nAgent 2\n\nBM25 Retriever\n\nAgent 3\n\nSPLADE Retriever\n\nAgent 4\n\nKnowledge Graph Retriever\n\nEach runs independently.\n\nFusion\n\nRRF\n\nscore += 1/(60 + rank)\n\nCombines rankings.\n\n8. Stage 6 — Compression Layer\n\nReduce noise.\n\nLLMLingua\n\nRemove irrelevant text.\n\n10,000 tokens\n↓\n1,200 tokens\n\nbefore reranking.\n\n9. Stage 7 — Reranking Layer\n\nCross Encoder Models:\n\nBGE-Reranker\nJina-Reranker\nCohere-Rerank\n\nInput:\n\nQuery\nCandidate Chunks\n\nOutput:\n\nRelevance Scores\n\nTop-K survives.\n\n10. Stage 8 — Context Assembly\n\nBuild final prompt context.\n\nRules:\n\nNo duplicate chunks\nPreserve chronology\nMerge sibling chunks\nToken budget enforcement 11. Stage 9 — Generation Layer\n\nLangGraph Generation Agent.\n\nConstraints:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0_c0",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 3,
+                "score": 0.031099324975891997,
+                "content": "# PRD: Enterprise-Grade RAG Platform (10M+ Documents)\n\nStack\n\nPython 3.12\nLangGraph (orchestration)\nLangChain (retrievers, embeddings, document loaders)\nLangSmith (observability, evals, tracing)\nDeepAgents (specialized retrieval/reasoning agents)\nPostgreSQL + pgvector\nRedis\nElasticsearch/OpenSearch\nNeo4j (Knowledge Graph)\nS3/MinIO\nKafka/NATS\nFastAPI\nKubernetes\n\n1. Product Vision\n\nBuild a production-grade RAG platform capable of:\n\n10M+ documents\n<2.5s response latency\nSource-grounded answers\nHallucination detection\nMulti-hop reasoning\nContinuous self-improvement\nEnterprise auditability\nMulti-tenant support\n\nThe system should answer:\n\n\"What changed in policy X after regulation Y and how does it impact division Z?\"\n\nwithout hallucinating or losing citations."
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0_c3",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 4,
+                "score": 0.029850746268656716,
+                "content": "Maintain multiple indexes.\n\nBM25\n\nKeyword matching.\n\nGood for:\n\nerror code 0x8007\ninvoice number\nSKU123\nDense Vector\n\nSemantic retrieval.\n\nModel examples:\n\nbge-large\ngte-large\ne5-large\nSPLADE\n\nLearned sparse retrieval.\n\nBenefits:\n\nBetter than BM25\nCaptures semantic expansion\nKnowledge Graph\n\nNeo4j.\n\nCompany\n├─ owns\n│\n▼\nProduct\n├─ regulated_by\n▼\nPolicy\n\nSupports relationship retrieval.\n\n6. Stage 4 — Query Understanding Layer\n\nLangGraph Agent.\n\nIntent Classification\n\nClassify:\n\nSimple\nMultiHop\nAnalytical\nComparative\nTemporal\nKGQuery\nQuery Rewriting\n\nExample:\n\n\"What changed?\"\n\nbecomes\n\n\"What changes occurred in Policy X between\n2024 and 2025?\"\nHyDE\n\nGenerate hypothetical answer.\n\nQuestion\n↓\nHypothetical Answer\n↓\nEmbedding\n↓\nRetrieval\n\nImproves recall.\n\nQuery Decomposition\n\nExample:\n\nWhat changed after regulation Y and how\ndid it impact division Z?\n\nSubqueries:\n\nQ1 Regulation Y changes\nQ2 Policy X changes\nQ3 Impact on Division Z 7. Stage 5 — Retrieval Layer\n\nUse multiple retrievers simultaneously."
+            },
+            {
+                "chunk_id": "tmp7crndkya_p2",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 5,
+                "score": 0.029827662395050816,
+                "content": "class VectorStore(ABC):\n\n    @abstractmethod\n    def search(self, query_embedding):\n        pass\n\n    @abstractmethod\n    def insert(self, vectors):\n        pass\n\nImplement:\n\nFaissVectorStore\nQdrantVectorStore\nWeaviateVectorStore\nMilvusVectorStore\nPgVectorStore\n\nThen LangGraph never knows which backend is used.\n\nWhat I'd Actually Build\n\nPhase 1 (POC)\n\nLangGraph\nLangChain\nFAISS\nBM25\nRedis\nPostgres\nFastAPI\nLangSmith\n\nPhase 2\n\nAdd:\nSPLADE\nNeo4j\nHyDE\nQuery Decomposition\nLLMLingua\nCross Encoder Reranker\n\nPhase 3\n\nFaithfulness Verification\nRAGAS Online\nShadow Deployments\nA/B Testing\nAuto Re-indexing\n\nPhase 4\n\nReplace FAISS\n→ Qdrant or Milvus\n\nAt ~10M+ chunks with frequent updates, distributed vector databases become much easier operationally than maintaining large FAISS indices, but FAISS is perfect for getting the entire system architecture working first."
+            },
+            {
+                "chunk_id": "tmp7crndkya_p2_c0",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 6,
+                "score": 0.02976190476190476,
+                "content": "class VectorStore(ABC):\n\n    @abstractmethod\n    def search(self, query_embedding):\n        pass\n\n    @abstractmethod\n    def insert(self, vectors):\n        pass\n\nImplement:\n\nFaissVectorStore\nQdrantVectorStore\nWeaviateVectorStore\nMilvusVectorStore\nPgVectorStore\n\nThen LangGraph never knows which backend is used.\n\nWhat I'd Actually Build\n\nPhase 1 (POC)\n\nLangGraph\nLangChain\nFAISS\nBM25\nRedis\nPostgres\nFastAPI\nLangSmith\n\nPhase 2\n\nAdd:\nSPLADE\nNeo4j\nHyDE\nQuery Decomposition\nLLMLingua\nCross Encoder Reranker\n\nPhase 3\n\nFaithfulness Verification\nRAGAS Online\nShadow Deployments\nA/B Testing\nAuto Re-indexing\n\nPhase 4\n\nReplace FAISS\n→ Qdrant or Milvus\n\nAt ~10M+ chunks with frequent updates, distributed vector databases become much easier operationally than maintaining large FAISS indices, but FAISS is perfect for getting the entire system architecture working first."
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c3",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 7,
+                "score": 0.029726775956284153,
+                "content": "This is roughly the architecture you'd expect for a modern enterprise RAG system rather than a basic \"BM25 + vector + reranker\" pipeline. The biggest differentiators are query understanding, multi-retriever fusion, faithfulness verification, and the feedback flywheel, which are often missing from most published RAG diagrams.\n\nfor vector store use faiss for now\n\nUsing FAISS initially is a very reasonable decision for a v1/v2 system.\n\nFor your architecture I'd modify the storage layer as follows:\n\nStorage Layer\nDocument Storage\nMinIO / S3\n├── raw documents\n├── normalized documents\n└── versioned snapshots\nMetadata Store\nPostgres\n\ndocuments\nchunks\nentities\nversions\ncitations\nretrieval_logs\nevaluation_scores\nVector Store (V1)\nFAISS\n\nIndexHNSWFlat\nor\nIndexIVFPQ\n\nStore:\n\n{\n\"chunk_id\": \"...\",\n\"embedding\": [...],\n\"metadata_ref\": \"postgres_id\"\n}\n\nMetadata should remain in PostgreSQL.\n\nNever store all metadata inside FAISS.\n\nRecommended FAISS Layout\n\nFor 10M+ chunks:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 8,
+                "score": 0.0288981288981289,
+                "content": "Build final prompt context.\n\nRules:\n\nNo duplicate chunks\nPreserve chronology\nMerge sibling chunks\nToken budget enforcement 11. Stage 9 — Generation Layer\n\nLangGraph Generation Agent.\n\nConstraints:\n\nAnswer ONLY from provided context.\nIf evidence missing:\n\"I don't have sufficient evidence.\"\n\nNo external knowledge.\n\n12. Stage 10 — Faithfulness Layer\n\nMost RAG systems stop here.\n\nWe do not.\n\nClaim Extraction\nAnswer\n↓\nClaims\n\nExample:\n\nClaim 1\nClaim 2\nClaim 3\nNLI Verification\n\nModels:\n\nMiniCheck\nTRUE\nDeBERTa-NLI\n\nVerify:\n\nClaim\n⊆\nRetrieved Evidence\nFailure Handling\n\nIf unsupported:\n\nRegenerate\n\nor\n\nAbstain 13. Stage 11 — Citation Engine\n\nEvery statement linked.\n\n[1] Policy.pdf p.17\n[2] Memo.docx p.4\n[3] Email.msg p.2\n\nClickable references.\n\n14. Stage 12 — Memory Layer\n\nRedis.\n\nSemantic Cache\ncosine(query,new_query) > 0.95\n\nReturn cached response.\n\nSession Memory\n\nStore:\n\nCurrent task\nUser preferences\nConversation state 15. Stage 13 — Evaluation System\n\nLangSmith.\n\nTrack:\n\nRecall@K\nPrecision@K\nMRR\nNDCG\nFaithfulness\nContext Precision\nHallucination Rate\nOnline Evaluation\n\nSample:\n\n5% production traffic\n\nRun shadow pipeline.\n\nCompare:\n\nPipeline A\nvs\nPipeline B 16. Stage 14 — Observability\n\nLangSmith + OpenTelemetry.\n\nTrack:\n\nRetrieval latency\nRerank latency\nGeneration latency\nFaithfulness failures\nMissing citations\nCost per query 17. Stage 15 — Continuous Learning Flywheel\nUser Query\n↓\nAnswer\n↓\nEvaluation\n↓\nFailure Detection\n↓\nRoot Cause Analysis\n↓\nRetrieval Improvement\n↓\nReindexing\n↓\nBetter Answers 18. LangGraph Workflow\nSTART\n│\n▼\nQuery Understanding\n│\n▼\nIntent Router\n│\n├─ Dense\n├─ BM25\n├─ SPLADE\n└─ KG\n│\n▼\nFusion\n│\n▼\nCompression\n│\n▼\nRerank\n│\n▼\nContext Build\n│\n▼\nGenerate\n│\n▼\nFaithfulness Check\n│\n├─ PASS → Citations\n│\n└─ FAIL → Regenerate\n│\n▼\nEND\nSuccess Metrics\nMetric Target\nRecall@20 >95%\nFaithfulness >98%\nCitation Coverage 100%\nP95 Latency <2.5s\nHallucination Rate <1%\nAvailability 99.9%\nCache Hit Rate >40%\nCost Per Query <$0.01\n\nThis is roughly the architecture you'd expect for a modern enterprise RAG system rather than a basic \"BM25 + vector + reranker\" pipeline. The biggest differentiators are query understanding, multi-retriever fusion, faithfulness verification, and the feedback flywheel, which are often missing from most published RAG diagrams.\n\nfor vector store use faiss for now\n\nUsing FAISS initially is a very reasonable decision for a v1/v2 system.\n\nFor your architecture I'd modify the storage layer as follows:\n\nStorage Layer\nDocument Storage\nMinIO / S3\n├── raw documents\n├── normalized documents\n└── versioned snapshots\nMetadata Store\nPostgres\n\ndocuments\nchunks\nentities\nversions\ncitations\nretrieval_logs\nevaluation_scores\nVector Store (V1)\nFAISS\n\nIndexHNSWFlat\nor\nIndexIVFPQ\n\nStore:\n\n{\n\"chunk_id\": \"...\",\n\"embedding\": [...],\n\"metadata_ref\": \"postgres_id\"\n}\n\nMetadata should remain in PostgreSQL.\n\nNever store all metadata inside FAISS.\n\nRecommended FAISS Layout\n\nFor 10M+ chunks:\n\nFAISS\n├── Legal\n├── Engineering\n├── HR\n├── Product\n└── Finance\n\nDomain sharding.\n\nAvoid:\n\n1 giant FAISS index\n\nbecause retrieval latency grows and rebuilds become painful.\n\nRetrieval Flow\nUser Query\n│\n▼\nIntent Router\n│\n▼\nShard Selector\n│\n▼\nFAISS Search\n│\n▼\nTop 100\n│\n▼\nReranker\n│\n▼\nTop 10\nEmbeddings\n\nRecommended:\n\nbge-large-en-v1.5\nbge-m3\ngte-large\n\nFor multi-language:\n\nbge-m3\nFAISS Index Choice\nDevelopment\nfaiss.IndexFlatIP\n\nPros:\n\nSimple\nExact search\n\nCons:\n\nSlow\nProduction\nfaiss.IndexHNSWFlat\n\nPros:\n\nFast\nExcellent recall\n\nUsually best first production choice.\n\nVery Large Scale\nfaiss.IndexIVFPQ\n\nPros:\n\nSmaller memory footprint\nFaster\n\nCons:\n\nLower recall\nMore tuning\nLangGraph Node Update\nQuery Understanding\n│\n▼\nRetriever Coordinator\n│\n┌──────┼────────┐\n▼ ▼ ▼\nBM25 FAISS KG\n│ │ │\n└──────┴────────┘\n│\n▼\nRRF Fusion\n│\n▼\nCompression\n│\n▼\nReranking\n│\n▼\nGeneration\nFuture Migration Path\n\nDesign an abstraction from day one:\n\nclass VectorStore(ABC):\n\n    @abstractmethod\n    def search(self, query_embedding):\n        pass\n\n    @abstractmethod\n    def insert(self, vectors):\n        pass\n\nImplement:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0_c2",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 9,
+                "score": 0.015625,
+                "content": "Convert raw enterprise documents into searchable knowledge.\n\nSupported Sources\nPDF\nDOCX\nPPTX\nWiki\nConfluence\nSharePoint\nEmails\nDatabases\nAPIs\nGit repositories\nProcessing Flow\nRaw Document\n↓\nNormalization\n↓\nDeduplication\n↓\nMetadata Extraction\n↓\nChunking\n↓\nEmbedding\n↓\nIndexing\nMetadata\n\nStore:\n\n{\n\"document_id\": \"...\",\n\"title\": \"...\",\n\"created_at\": \"...\",\n\"updated_at\": \"...\",\n\"author\": \"...\",\n\"department\": \"...\",\n\"entities\": [...],\n\"version\": \"...\",\n\"tags\": [...]\n} 4. Stage 2 — Chunking Service\nProblem\n\nFixed token chunking breaks semantic meaning.\n\nSemantic Chunking\n\nSplit on:\n\nHeading\nParagraph\nSection\nSentence boundaries\n\nNever arbitrary token windows.\n\nParent Child Retrieval\nParent Chunk\n512-1024 tokens\n\n├─ Child A\n├─ Child B\n├─ Child C\n\nRetrieve:\n\nChild\n\nGenerate using:\n\nParent\nChunk Metadata\n{\n\"chunk_id\": \"...\",\n\"parent_id\": \"...\",\n\"page\": 17,\n\"position\": 4,\n\"entities\": [...],\n\"section\": \"Risk Analysis\"\n} 5. Stage 3 — Indexing Layer\n\nMaintain multiple indexes.\n\nBM25\n\nKeyword matching.\n\nGood for:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c2",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 10,
+                "score": 0.015384615384615385,
+                "content": "Sample:\n\n5% production traffic\n\nRun shadow pipeline.\n\nCompare:\n\nPipeline A\nvs\nPipeline B 16. Stage 14 — Observability\n\nLangSmith + OpenTelemetry.\n\nTrack:\n\nRetrieval latency\nRerank latency\nGeneration latency\nFaithfulness failures\nMissing citations\nCost per query 17. Stage 15 — Continuous Learning Flywheel\nUser Query\n↓\nAnswer\n↓\nEvaluation\n↓\nFailure Detection\n↓\nRoot Cause Analysis\n↓\nRetrieval Improvement\n↓\nReindexing\n↓\nBetter Answers 18. LangGraph Workflow\nSTART\n│\n▼\nQuery Understanding\n│\n▼\nIntent Router\n│\n├─ Dense\n├─ BM25\n├─ SPLADE\n└─ KG\n│\n▼\nFusion\n│\n▼\nCompression\n│\n▼\nRerank\n│\n▼\nContext Build\n│\n▼\nGenerate\n│\n▼\nFaithfulness Check\n│\n├─ PASS → Citations\n│\n└─ FAIL → Regenerate\n│\n▼\nEND\nSuccess Metrics\nMetric Target\nRecall@20 >95%\nFaithfulness >98%\nCitation Coverage 100%\nP95 Latency <2.5s\nHallucination Rate <1%\nAvailability 99.9%\nCache Hit Rate >40%\nCost Per Query <$0.01"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c1",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 11,
+                "score": 0.015151515151515152,
+                "content": "Semantic Cache\ncosine(query,new_query) > 0.95\n\nReturn cached response.\n\nSession Memory\n\nStore:\n\nCurrent task\nUser preferences\nConversation state 15. Stage 13 — Evaluation System\n\nLangSmith.\n\nTrack:\n\nRecall@K\nPrecision@K\nMRR\nNDCG\nFaithfulness\nContext Precision\nHallucination Rate\nOnline Evaluation\n\nSample:\n\n5% production traffic\n\nRun shadow pipeline.\n\nCompare:\n\nPipeline A\nvs\nPipeline B 16. Stage 14 — Observability\n\nLangSmith + OpenTelemetry.\n\nTrack:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c5",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 12,
+                "score": 0.014705882352941176,
+                "content": "Cons:\n\nSlow\nProduction\nfaiss.IndexHNSWFlat\n\nPros:\n\nFast\nExcellent recall\n\nUsually best first production choice.\n\nVery Large Scale\nfaiss.IndexIVFPQ\n\nPros:\n\nSmaller memory footprint\nFaster\n\nCons:\n\nLower recall\nMore tuning\nLangGraph Node Update\nQuery Understanding\n│\n▼\nRetriever Coordinator\n│\n┌──────┼────────┐\n▼ ▼ ▼\nBM25 FAISS KG\n│ │ │\n└──────┴────────┘\n│\n▼\nRRF Fusion\n│\n▼\nCompression\n│\n▼\nReranking\n│\n▼\nGeneration\nFuture Migration Path\n\nDesign an abstraction from day one:\n\nclass VectorStore(ABC):\n\n    @abstractmethod\n    def search(self, query_embedding):\n        pass\n\n    @abstractmethod\n    def insert(self, vectors):\n        pass\n\nImplement:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0_c4",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 13,
+                "score": 0.014492753623188406,
+                "content": "Subqueries:\n\nQ1 Regulation Y changes\nQ2 Policy X changes\nQ3 Impact on Division Z 7. Stage 5 — Retrieval Layer\n\nUse multiple retrievers simultaneously.\n\nDeepAgent Retrieval Team\nAgent 1\n\nDense Retriever\n\nAgent 2\n\nBM25 Retriever\n\nAgent 3\n\nSPLADE Retriever\n\nAgent 4\n\nKnowledge Graph Retriever\n\nEach runs independently.\n\nFusion\n\nRRF\n\nscore += 1/(60 + rank)\n\nCombines rankings.\n\n8. Stage 6 — Compression Layer\n\nReduce noise.\n\nLLMLingua\n\nRemove irrelevant text.\n\n10,000 tokens\n↓\n1,200 tokens\n\nbefore reranking.\n\n9. Stage 7 — Reranking Layer\n\nCross Encoder Models:\n\nBGE-Reranker\nJina-Reranker\nCohere-Rerank\n\nInput:\n\nQuery\nCandidate Chunks\n\nOutput:\n\nRelevance Scores\n\nTop-K survives.\n\n10. Stage 8 — Context Assembly\n\nBuild final prompt context.\n\nRules:\n\nNo duplicate chunks\nPreserve chronology\nMerge sibling chunks\nToken budget enforcement 11. Stage 9 — Generation Layer\n\nLangGraph Generation Agent.\n\nConstraints:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c4",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 14,
+                "score": 0.014285714285714285,
+                "content": "{\n\"chunk_id\": \"...\",\n\"embedding\": [...],\n\"metadata_ref\": \"postgres_id\"\n}\n\nMetadata should remain in PostgreSQL.\n\nNever store all metadata inside FAISS.\n\nRecommended FAISS Layout\n\nFor 10M+ chunks:\n\nFAISS\n├── Legal\n├── Engineering\n├── HR\n├── Product\n└── Finance\n\nDomain sharding.\n\nAvoid:\n\n1 giant FAISS index\n\nbecause retrieval latency grows and rebuilds become painful.\n\nRetrieval Flow\nUser Query\n│\n▼\nIntent Router\n│\n▼\nShard Selector\n│\n▼\nFAISS Search\n│\n▼\nTop 100\n│\n▼\nReranker\n│\n▼\nTop 10\nEmbeddings\n\nRecommended:\n\nbge-large-en-v1.5\nbge-m3\ngte-large\n\nFor multi-language:\n\nbge-m3\nFAISS Index Choice\nDevelopment\nfaiss.IndexFlatIP\n\nPros:\n\nSimple\nExact search\n\nCons:\n\nSlow\nProduction\nfaiss.IndexHNSWFlat\n\nPros:\n\nFast\nExcellent recall\n\nUsually best first production choice.\n\nVery Large Scale\nfaiss.IndexIVFPQ\n\nPros:\n\nSmaller memory footprint\nFaster\n\nCons:"
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c0",
+                "document_id": "tmp7crndkya",
+                "page": null,
+                "rank": 15,
+                "score": 0.014084507042253521,
+                "content": "Build final prompt context.\n\nRules:\n\nNo duplicate chunks\nPreserve chronology\nMerge sibling chunks\nToken budget enforcement 11. Stage 9 — Generation Layer\n\nLangGraph Generation Agent.\n\nConstraints:\n\nAnswer ONLY from provided context.\nIf evidence missing:\n\"I don't have sufficient evidence.\"\n\nNo external knowledge.\n\n12. Stage 10 — Faithfulness Layer\n\nMost RAG systems stop here.\n\nWe do not.\n\nClaim Extraction\nAnswer\n↓\nClaims\n\nExample:\n\nClaim 1\nClaim 2\nClaim 3\nNLI Verification\n\nModels:\n\nMiniCheck\nTRUE\nDeBERTa-NLI\n\nVerify:\n\nClaim\n⊆\nRetrieved Evidence\nFailure Handling\n\nIf unsupported:\n\nRegenerate\n\nor\n\nAbstain 13. Stage 11 — Citation Engine\n\nEvery statement linked.\n\n[1] Policy.pdf p.17\n[2] Memo.docx p.4\n[3] Email.msg p.2\n\nClickable references.\n\n14. Stage 12 — Memory Layer\n\nRedis.\n\nSemantic Cache\ncosine(query,new_query) > 0.95\n\nReturn cached response.\n\nSession Memory\n\nStore:\n\nCurrent task\nUser preferences\nConversation state 15. Stage 13 — Evaluation System\n\nLangSmith.\n\nTrack:"
+            }
+        ],
+        "reranked_chunks": [
+            {
+                "chunk_id": "tmp7crndkya_p0_c1",
+                "rank": 1,
+                "score": -8.62841796875
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0",
+                "rank": 2,
+                "score": -10.082136154174805
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1",
+                "rank": 3,
+                "score": -10.396222114562988
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c3",
+                "rank": 4,
+                "score": -10.678936958312988
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c5",
+                "rank": 5,
+                "score": -11.000800132751465
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0_c4",
+                "rank": 6,
+                "score": -11.031599998474121
+            },
+            {
+                "chunk_id": "tmp7crndkya_p0_c3",
+                "rank": 7,
+                "score": -11.108247756958008
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c2",
+                "rank": 8,
+                "score": -11.108353614807129
+            },
+            {
+                "chunk_id": "tmp7crndkya_p1_c0",
+                "rank": 9,
+                "score": -11.111502647399902
+            },
+            {
+                "chunk_id": "tmp7crndkya_p2",
+                "rank": 10,
+                "score": -11.126943588256836
+            }
+        ],
+        "supporting_chunks": [
+            "tmp7crndkya_p0_c1",
+            "tmp7crndkya_p0",
+            "tmp7crndkya_p1",
+            "tmp7crndkya_p1_c3",
+            "tmp7crndkya_p1_c5",
+            "tmp7crndkya_p0_c4",
+            "tmp7crndkya_p0_c3",
+            "tmp7crndkya_p1_c2",
+            "tmp7crndkya_p1_c0",
+            "tmp7crndkya_p2"
+        ]
+    },
+    "evaluation": {
+        "confidence": 0.65,
+        "faithfulness_score": 0.5,
+        "faithfulness_passed": false,
+        "answer_relevance_score": 1.0,
+        "context_recall_score": 0.3,
+        "claim_count": 0,
+        "supported_claims": 0
+    },
+    "metadata": {
+        "intent": "simple",
+        "model": "gpt-4o",
+        "embedding_model": "text-embedding-3-small",
+        "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        "latency_ms": 45245,
+        "tokens_input": 4500,
+        "tokens_output": 358
+    }
+}

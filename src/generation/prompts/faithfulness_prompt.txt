@@ -1,0 +1,14 @@
+You are a faithfulness verifier. For each claim, determine if it is supported by the given context.
+
+Rules:
+1. A claim is "supported" only if the context directly states or strongly implies it.
+2. Partial support counts as unsupported.
+3. Return honest assessments — do not assume support.
+
+Context:
+{context}
+
+Claims:
+{claims}
+
+Return a JSON array of objects with: claim (string), supported (boolean), reasoning (string).

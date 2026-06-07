@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Env Utility &middot; Agentic RAG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+            mono: ['"Roboto Mono"', '"SF Mono"', 'ui-monospace', 'Consolas', 'monospace'],
+          },
+          colors: {
+            canvas: '#0a0a0a',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    [data-lucide] {
+      width: 1em;
+      height: 1em;
+      vertical-align: -0.125em;
+    }
+
+    #toast {
+      transition: opacity 0.25s ease;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-canvas text-zinc-100 antialiased font-sans">
+
+  <!-- Toast -->
+  <div id="toast"
+    class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-zinc-900 border border-zinc-700 text-zinc-100 px-4 py-2.5 rounded-lg text-sm opacity-0 inline-flex items-center gap-2 z-50">
+    <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-400"></i>
+    <span id="toastText">Copied</span>
+  </div>
+
+  <div class="max-w-[860px] mx-auto px-4 py-8 sm:px-6 sm:py-12">
+
+    <!-- Header -->
+    <header class="flex items-start gap-4 mb-8">
+      <div class="w-10 h-10 border border-zinc-800 rounded-lg flex items-center justify-center text-zinc-100 shrink-0">
+        <i data-lucide="terminal" class="w-5 h-5"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-xl sm:text-2xl font-semibold tracking-tight inline-flex items-center gap-2">
+          <i data-lucide="key-round" class="w-5 h-5 text-zinc-400"></i>
+          env utility
+        </h1>
+        <p class="text-sm text-zinc-500 mt-0.5">Fill environment variables &rarr; generate a base64 token for the
+          Authorization header.</p>
+      </div>
+      <a href="/"
+        class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-zinc-800 rounded-lg text-xs uppercase tracking-wider text-zinc-500 no-underline transition-colors hover:border-zinc-600 hover:text-zinc-300">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        home
+      </a>
+    </header>
+
+    <!-- Decode box -->
+    <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 mb-8">
+      <div class="flex items-center gap-2 mb-2.5">
+        <i data-lucide="unlock" class="w-3.5 h-3.5 text-zinc-500"></i>
+        <label class="text-xs uppercase tracking-wider text-zinc-500">Decode existing token</label>
+      </div>
+      <div class="flex gap-2">
+        <input type="text" id="decodeInput" placeholder="Paste base64 token here to pre-fill the form..."
+          aria-label="Existing base64 token"
+          class="flex-1 px-3 py-2 bg-zinc-900/60 border border-zinc-800 rounded-lg text-sm text-zinc-100 font-mono placeholder:text-zinc-600 outline-none transition-colors focus:border-zinc-600" />
+        <button id="decodeBtn"
+          class="shrink-0 px-4 py-2 border border-zinc-700 rounded-lg text-sm text-zinc-300 bg-transparent cursor-pointer inline-flex items-center gap-1.5 font-sans transition-colors hover:border-zinc-500 hover:text-zinc-100">
+          <i data-lucide="file-input" class="w-4 h-4"></i>
+          Decode
+        </button>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div id="form"></div>
+
+    <!-- Actions -->
+    <div class="flex flex-wrap gap-4 my-8">
+      <button id="generateBtn"
+        class="px-5 py-2.5 bg-zinc-100 text-zinc-950 border border-zinc-100 rounded-lg text-sm cursor-pointer inline-flex items-center gap-2 font-sans transition-colors hover:bg-white">
+        <i data-lucide="zap" class="w-4 h-4"></i>
+        Generate Token
+      </button>
+      <button id="defaultsBtn"
+        class="px-5 py-2.5 bg-transparent border border-zinc-700 rounded-lg text-sm text-zinc-300 cursor-pointer inline-flex items-center gap-2 font-sans transition-colors hover:border-zinc-500 hover:text-zinc-100">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        Load Defaults
+      </button>
+      <button id="clearBtn"
+        class="px-5 py-2.5 bg-transparent border border-zinc-700 rounded-lg text-sm text-zinc-300 cursor-pointer inline-flex items-center gap-2 font-sans transition-colors hover:border-zinc-500 hover:text-zinc-100">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+        Clear All
+      </button>
+    </div>
+
+    <!-- Output -->
+    <div class="mt-6 hidden" id="outputSection">
+      <!-- .env -->
+      <div class="flex justify-between items-baseline mb-2">
+        <h3 class="text-xs uppercase tracking-wider text-zinc-500 inline-flex items-center gap-1.5">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-600"></i>
+          Generated .env
+        </h3>
+        <button id="copyEnvBtn"
+          class="bg-transparent border-none text-zinc-500 text-xs uppercase tracking-wider cursor-pointer inline-flex items-center gap-1.5 font-sans hover:text-zinc-300">
+          <i data-lucide="copy" class="w-3 h-3"></i>
+          Copy
+        </button>
+      </div>
+      <textarea id="envText" readonly
+        class="w-full min-h-[160px] p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg text-sm text-zinc-100 font-mono resize-y outline-none transition-colors focus:border-zinc-600"></textarea>
+
+      <!-- Base64 -->
+      <h3 class="text-xs uppercase tracking-wider text-zinc-500 mt-6 mb-2 inline-flex items-center gap-1.5">
+        <i data-lucide="hash" class="w-3.5 h-3.5 text-zinc-600"></i>
+        Base64 Token
+      </h3>
+      <div class="flex gap-2 items-stretch">
+        <textarea id="base64Output" readonly placeholder="(click Generate Token)"
+          class="flex-1 min-h-[48px] p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-sm text-zinc-100 font-mono resize-none outline-none transition-colors focus:border-zinc-600"></textarea>
+        <button id="copyTokenBtn"
+          class="px-4 border border-zinc-800 rounded-lg text-sm text-zinc-400 bg-transparent cursor-pointer inline-flex items-center gap-2 font-sans shrink-0 transition-colors hover:border-zinc-600 hover:text-zinc-100">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          Copy Token
+        </button>
+      </div>
+
+      <!-- Auth header -->
+      <div class="flex gap-2 items-stretch mt-2">
+        <textarea id="authHeaderOutput" readonly placeholder="(generated from token)"
+          class="flex-1 min-h-[48px] p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-sm text-zinc-100 font-mono resize-none outline-none transition-colors focus:border-zinc-600"></textarea>
+        <button id="copyHeaderBtn"
+          class="px-4 border border-zinc-800 rounded-lg text-sm text-zinc-400 bg-transparent cursor-pointer inline-flex items-center gap-2 font-sans shrink-0 transition-colors hover:border-zinc-600 hover:text-zinc-100">
+          <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+          Copy Header
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    const GROUP_ICONS = {
+      OpenAI: "sparkles",
+      Application: "settings",
+      PostgreSQL: "database",
+      Redis: "zap",
+      LangSmith: "flask-conical",
+      Embedding: "binary",
+      Chunking: "scissors",
+      Retrieval: "search",
+      Generation: "message-square",
+      "S3 / MinIO": "cloud",
+      Neo4j: "git-branch",
+    };
+
+    const KEY_ICONS = {
+      OPENAI_API_KEY: "key",
+      OPENAI_BASE_URL: "link",
+      OPENAI_CHAT_MODEL: "message-circle",
+      OPENAI_EMBEDDING_MODEL: "binary",
+      APP_NAME: "tag",
+      DEBUG: "bug",
+      DATABASE_URL: "database",
+      REDIS_URL: "zap",
+      LANGSMITH_API_KEY: "flask-conical",
+      LANGSMITH_PROJECT: "folder",
+      LANGSMITH_TRACING: "activity",
+      EMBEDDING_DIMENSION: "ruler",
+      PARENT_CHUNK_MAX_TOKENS: "scissors",
+      CHILD_CHUNK_MAX_TOKENS: "scissors-line-dashed",
+      RETRIEVAL_TOP_K: "list-ordered",
+      RERANK_TOP_K: "arrow-up-down",
+      FUSION_K: "combine",
+      GENERATION_TEMPERATURE: "thermometer",
+      MAX_CONTEXT_TOKENS: "maximize",
+      S3_BUCKET: "bucket",
+      S3_REGION: "map-pin",
+      S3_ENDPOINT: "server",
+      S3_ACCESS_KEY: "key",
+      S3_SECRET_KEY: "shield",
+      NEO4J_URI: "git-branch",
+      NEO4J_USER: "user",
+      NEO4J_PASSWORD: "lock",
+      NEO4J_DATABASE: "layers",
+      NEO4J_ENABLED: "power",
+    };
+
+    const ENV_VARS = [
+      { key: "OPENAI_API_KEY", required: true, group: "OpenAI", type: "password", placeholder: "sk-..." },
+      { key: "OPENAI_BASE_URL", required: false, group: "OpenAI", type: "text", placeholder: "https://api.openai.com/v1" },
+      { key: "OPENAI_CHAT_MODEL", required: false, group: "OpenAI", type: "text", default: "gpt-4o" },
+      { key: "OPENAI_EMBEDDING_MODEL", required: false, group: "OpenAI", type: "text", default: "text-embedding-3-small" },
+      { key: "APP_NAME", required: false, group: "Application", type: "text", default: "vector-store" },
+      { key: "DEBUG", required: false, group: "Application", type: "bool", default: "false" },
+      { key: "DATABASE_URL", required: false, group: "PostgreSQL", type: "text", placeholder: "postgresql://user:pass@host:5432/db?sslmode=require" },
+      { key: "REDIS_URL", required: false, group: "Redis", type: "text", placeholder: "redis://default:pass@host:6379" },
+      { key: "LANGSMITH_API_KEY", required: false, group: "LangSmith", type: "password", placeholder: "lsv2_..." },
+      { key: "LANGSMITH_PROJECT", required: false, group: "LangSmith", type: "text", default: "vector-store" },
+      { key: "LANGSMITH_TRACING", required: false, group: "LangSmith", type: "bool", default: "false" },
+      { key: "EMBEDDING_DIMENSION", required: false, group: "Embedding", type: "number", default: "1536" },
+      { key: "PARENT_CHUNK_MAX_TOKENS", required: false, group: "Chunking", type: "number", default: "1024" },
+      { key: "CHILD_CHUNK_MAX_TOKENS", required: false, group: "Chunking", type: "number", default: "256" },
+      { key: "RETRIEVAL_TOP_K", required: false, group: "Retrieval", type: "number", default: "20" },
+      { key: "RERANK_TOP_K", required: false, group: "Retrieval", type: "number", default: "10" },
+      { key: "FUSION_K", required: false, group: "Retrieval", type: "number", default: "60" },
+      { key: "GENERATION_TEMPERATURE", required: false, group: "Generation", type: "number", default: "0.3" },
+      { key: "MAX_CONTEXT_TOKENS", required: false, group: "Generation", type: "number", default: "8000" },
+      { key: "S3_BUCKET", required: false, group: "S3 / MinIO", type: "text", default: "vector-store" },
+      { key: "S3_REGION", required: false, group: "S3 / MinIO", type: "text", default: "us-east-1" },
+      { key: "S3_ENDPOINT", required: false, group: "S3 / MinIO", type: "text", placeholder: "http://localhost:9000 (MinIO only)" },
+      { key: "S3_ACCESS_KEY", required: false, group: "S3 / MinIO", type: "password" },
+      { key: "S3_SECRET_KEY", required: false, group: "S3 / MinIO", type: "password" },
+      { key: "NEO4J_URI", required: false, group: "Neo4j", type: "text", default: "bolt://localhost:7687" },
+      { key: "NEO4J_USER", required: false, group: "Neo4j", type: "text", default: "neo4j" },
+      { key: "NEO4J_PASSWORD", required: false, group: "Neo4j", type: "password" },
+      { key: "NEO4J_DATABASE", required: false, group: "Neo4j", type: "text", default: "neo4j" },
+      { key: "NEO4J_ENABLED", required: false, group: "Neo4j", type: "bool", default: "false" },
+    ];
+
+    const formEl = document.getElementById("form");
+    const decodeInput = document.getElementById("decodeInput");
+    const decodeBtn = document.getElementById("decodeBtn");
+    const generateBtn = document.getElementById("generateBtn");
+    const defaultsBtn = document.getElementById("defaultsBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const outputSection = document.getElementById("outputSection");
+    const envText = document.getElementById("envText");
+    const base64Output = document.getElementById("base64Output");
+    const authHeaderOutput = document.getElementById("authHeaderOutput");
+    const copyEnvBtn = document.getElementById("copyEnvBtn");
+    const copyTokenBtn = document.getElementById("copyTokenBtn");
+    const copyHeaderBtn = document.getElementById("copyHeaderBtn");
+    const toast = document.getElementById("toast");
+    const toastText = document.getElementById("toastText");
+    let toastTimer;
+
+    function showToast(msg, icon) {
+      toastText.textContent = msg;
+      const iconEl = toast.querySelector("[data-lucide]");
+      if (iconEl) iconEl.setAttribute("data-lucide", icon || "check");
+      lucide.createIcons({ nameAttr: "data-lucide" });
+      toast.classList.add("opacity-100");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("opacity-100"), 2000);
+    }
+
+    function buildForm() {
+      const groups = {};
+      ENV_VARS.forEach(v => { (groups[v.group] ??= []).push(v); });
+
+      let html = "";
+      Object.entries(groups).forEach(([groupName, vars]) => {
+        const gIcon = GROUP_ICONS[groupName] || "folder";
+        html += `<div class="mb-8">
+      <h2 class="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-500 pb-2 border-b border-zinc-800 mb-3 font-sans">
+        <i data-lucide="${gIcon}" class="w-3.5 h-3.5 text-zinc-600"></i>
+        <span>${groupName}</span>
+        <span class="ml-auto text-zinc-600 font-normal text-[0.7rem]">${vars.length} var${vars.length === 1 ? "" : "s"}</span>
+      </h2>`;
+
+        vars.forEach(v => {
+          const requiredText = v.required ? "REQUIRED" : "OPTIONAL";
+          const badgeClass = v.required ? "text-zinc-300 border-zinc-300" : "text-zinc-600 border-zinc-600";
+          const badgeIcon = v.required ? "asterisk" : "minus";
+          const inputId = `field-${v.key}`;
+          const keyIcon = KEY_ICONS[v.key] || "variable";
+          const isBool = v.type === "bool";
+
+          let inputField;
+          if (isBool) {
+            inputField = `<select id="${inputId}" data-key="${v.key}"
+          class="w-full px-3 py-2.5 bg-zinc-900/60 border border-zinc-800 rounded-lg text-sm text-zinc-100 font-mono outline-none transition-colors focus:border-zinc-600 appearance-none cursor-pointer"
+          style="background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 stroke=%27%23888%27 stroke-width=%271.5%27 fill=%27none%27 stroke-linecap=%27round%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 0.75rem center">
+          <option value="">—</option>
+          <option value="true">true</option>
+          <option value="false">false</option>
+        </select>`;
+          } else {
+            const inputType = v.type === "number" ? "number" : "text";
+            const placeholder = v.placeholder || (v.default ? `default: ${v.default}` : "");
+            const containerClass = v.type === "password" ? "relative" : "";
+            const toggleBtn = v.type === "password"
+              ? `<button type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 bg-transparent border-none text-zinc-500 cursor-pointer p-1 inline-flex items-center hover:text-zinc-300" data-target="${inputId}" aria-label="Toggle visibility">
+               <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+             </button>`
+              : "";
+            inputField = `<div class="${containerClass}">
+          <input type="${v.type === "password" ? "password" : inputType}" id="${inputId}" data-key="${v.key}" placeholder="${placeholder}" ${v.type === "number" ? 'step="any"' : ""}
+            class="w-full px-3 py-2.5 bg-zinc-900/60 border border-zinc-800 rounded-lg text-sm text-zinc-100 font-mono placeholder:text-zinc-600 outline-none transition-colors focus:border-zinc-600${v.type === "password" ? " pr-10" : ""}" />
+          ${toggleBtn}
+        </div>`;
+          }
+
+          let hint = "";
+          if (v.default) hint = `<span class="block text-xs text-zinc-600 mt-1">default: ${v.default}</span>`;
+          else if (!v.default && v.placeholder && !v.placeholder.startsWith("default:")) hint = `<span class="block text-xs text-zinc-600 mt-1">${v.placeholder}</span>`;
+
+          html += `<div class="flex flex-wrap items-center gap-2 py-2.5 border-b border-zinc-800/60 last:border-b-0">
+        <div class="flex items-center gap-2 min-w-[200px] flex-1 basis-auto">
+          <span class="w-3.5 h-3.5 inline-flex items-center justify-center text-zinc-600 shrink-0"><i data-lucide="${keyIcon}" class="w-3.5 h-3.5"></i></span>
+          <span class="text-sm font-mono break-all">${v.key}</span>
+          <span class="font-mono text-[0.65rem] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded leading-tight inline-flex items-center gap-1 border ${badgeClass}">
+            <i data-lucide="${badgeIcon}" class="w-2.5 h-2.5"></i>
+            ${requiredText}
+          </span>
+        </div>
+        <div class="flex-[2] min-w-[180px]">
+          ${inputField}
+          ${hint}
+        </div>
+      </div>`;
+        });
+        html += `</div>`;
+      });
+
+      formEl.innerHTML = html;
+      lucide.createIcons({ nameAttr: "data-lucide" });
+
+      // wire up password toggles
+      document.querySelectorAll("[data-target]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const target = document.getElementById(btn.dataset.target);
+          if (!target) return;
+          const pw = target.type === "password";
+          target.type = pw ? "text" : "password";
+          btn.innerHTML = `<i data-lucide="${pw ? "eye-off" : "eye"}" class="w-3.5 h-3.5"></i>`;
+          lucide.createIcons({ nameAttr: "data-lucide" });
+        });
+      });
+    }
+
+    function getFormValues() {
+      const values = {};
+      ENV_VARS.forEach(v => { const el = document.getElementById(`field-${v.key}`); values[v.key] = el ? el.value : ""; });
+      return values;
+    }
+
+    function setFormValues(values) {
+      ENV_VARS.forEach(v => { const el = document.getElementById(`field-${v.key}`); if (el && values[v.key] !== undefined) el.value = values[v.key]; });
+    }
+
+    function generateEnvText() {
+      const values = getFormValues();
+      const lines = [];
+      ENV_VARS.forEach(v => {
+        const val = values[v.key] || "";
+        if (!val && !v.required) return;
+        if (v.type === "bool" && val === "") return;
+        lines.push(`${v.key}=${val}`);
+      });
+      return lines.join("\n");
+    }
+
+    function generateToken() {
+      const envContent = generateEnvText();
+      const token = btoa(unescape(encodeURIComponent(envContent)));
+      const authHeader = `Authorization: Bearer ${token}`;
+      envText.value = envContent;
+      base64Output.value = token;
+      authHeaderOutput.value = authHeader;
+      outputSection.classList.remove("hidden");
+      outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function copyText(text, label, icon) {
+      navigator.clipboard.writeText(text).then(() => showToast(label || "Copied", icon || "check"));
+    }
+
+    function decodeToken(token) {
+      try {
+        const json = decodeURIComponent(escape(atob(token.trim())));
+        const values = {};
+        json.split("\n").forEach(line => {
+          const idx = line.indexOf("=");
+          if (idx === -1) return;
+          values[line.slice(0, idx)] = line.slice(idx + 1);
+        });
+        setFormValues(values);
+        showToast("Decoded & form filled", "unlock");
+      } catch (e) {
+        showToast("Invalid base64 token", "x-circle");
+      }
+    }
+
+    function loadDefaults() {
+      const values = {};
+      ENV_VARS.forEach(v => { if (v.default !== undefined) values[v.key] = v.default; });
+      setFormValues(values);
+      showToast("Defaults loaded", "rotate-ccw");
+    }
+
+    function clearAll() {
+      ENV_VARS.forEach(v => { const el = document.getElementById(`field-${v.key}`); if (el) el.value = ""; });
+      outputSection.classList.add("hidden");
+      showToast("Cleared", "trash-2");
+    }
+
+    function checkUrlParam() {
+      const token = new URLSearchParams(window.location.search).get("token");
+      if (token) decodeToken(token);
+    }
+
+    function checkLocalStorage() {
+      try { const saved = localStorage.getItem("vector-store-env"); if (saved) decodeToken(saved); } catch (e) { }
+    }
+
+    function saveToStorage(token) {
+      try { localStorage.setItem("vector-store-env", token); } catch (e) { }
+    }
+
+    // ---- init ----
+    buildForm();
+    loadDefaults();
+    checkUrlParam();
+    checkLocalStorage();
+
+    // ---- events ----
+    decodeBtn.addEventListener("click", () => decodeToken(decodeInput.value));
+    decodeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") decodeToken(decodeInput.value); });
+    generateBtn.addEventListener("click", () => { generateToken(); saveToStorage(base64Output.value); });
+    defaultsBtn.addEventListener("click", () => { loadDefaults(); outputSection.classList.add("hidden"); });
+    clearBtn.addEventListener("click", clearAll);
+    copyEnvBtn.addEventListener("click", () => copyText(envText.value, ".env copied", "copy"));
+    copyTokenBtn.addEventListener("click", () => copyText(base64Output.value, "Token copied", "copy"));
+    copyHeaderBtn.addEventListener("click", () => copyText(authHeaderOutput.value, "Header copied", "lock"));
+  </script>
+</body>
+
+</html>
