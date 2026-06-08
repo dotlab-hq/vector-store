@@ -16,6 +16,11 @@ async def reranking(state: RAGState) -> dict:
     if not state.retrieval_results:
         return {"reranked_results": [], "reranked_chunks": []}
 
+    if _reranker is None:
+        # Reranker unavailable — pass retrieval results through unchanged
+        logger.info("reranker_skipped", result_count=len(state.retrieval_results))
+        return {"reranked_results": list(state.retrieval_results), "reranked_chunks": []}
+
     query = state.rewritten_query or state.original_query
     reranked = await _reranker.rerank(query, state.retrieval_results, top_k=settings.rerank_top_k)
 

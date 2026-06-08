@@ -8,7 +8,6 @@ from src.indexing.embeddings import embeddings
 from src.indexing.qdrant.qdrant_store import QdrantVectorStore
 from src.observability.logging import get_logger
 from src.retrieval.hybrid.hybrid_retriever import HybridRetriever
-from src.retrieval.reranking.reranker import CrossEncoderReranker
 from src.vector_stores.scheduler import VectorStoreScheduler
 
 logger = get_logger()
@@ -30,9 +29,16 @@ def init_dependencies() -> None:
     embedder = embeddings
 
     hybrid_retriever = HybridRetriever(qdrant_store, bm25_store, embedder)
-    reranker = CrossEncoderReranker()
 
     set_retriever(hybrid_retriever)
+
+    # Lazy-load reranker — sentence-transformers + torch are heavy optional deps
+    try:
+        from src.retrieval.reranking.reranker import CrossEncoderReranker
+        reranker = CrossEncoderReranker()
+    except ImportError:
+        reranker = None
+        logger.info("reranker_disabled", reason="sentence-transformers not installed")
     set_reranker(reranker)
 
 
