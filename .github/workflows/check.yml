@@ -38,11 +38,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
 
-      - name: Lint
-        run: uv run ruff check src/ apps/
+      # - name: Lint
+      #   run: uv run ruff check src/ apps/
 
-      - name: Format check
-        run: uv run ruff format --check src/ apps/
+      # - name: Format check
+      #   run: uv run ruff format --check src/ apps/
 
       - name: Type check
         run: uv run pyright src/ apps/

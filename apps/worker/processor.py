@@ -60,10 +60,26 @@ class TaskProcessor:
         self._bm25_store = Bm25Store()
 
     async def rebuild_bm25(self) -> None:
-        """Rebuild the in-memory BM25 index from the database."""
-        count = await self._bm25_store.rebuild_from_db()
-        if count:
-            logger.info("bm25_rebuilt", count=count)
+        """Rebuild the in-memory BM25 index from the database.
+
+        Retries a few times on transient connection errors (common on Windows
+        where cloud DB connections may flap during startup).
+        """
+        for attempt in range(1, 4):
+            try:
+                count = await self._bm25_store.rebuild_from_db()
+                if count:
+                    logger.info("bm25_rebuilt", count=count)
+                return
+            except OSError as exc:
+                # Windows: [WinError 64] The specified network name is no longer available
+                logger.warning(
+                    "bm25_rebuild_retry",
+                    attempt=attempt,
+                    error=str(exc),
+                )
+                await asyncio.sleep(2 * attempt)
+        logger.error("bm25_rebuild_failed", error="exhausted retries")
 
     def start(self) -> None:
         self._task = asyncio.create_task(self._run_loop(), name="task-processor")
