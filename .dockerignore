@@ -15,4 +15,5 @@ venv
 tests/
 docs/
 *.sh
+!entrypoint.sh
 *.json
