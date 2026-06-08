@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # OpenAI
     openai_api_key: str = ""
-    openai_base_url: str = "http://localhost:25789/v1"
+    openai_base_url: str = ""  # empty = use OpenAI's default https://api.openai.com/v1
     openai_chat_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
 
@@ -29,6 +29,9 @@ class Settings(BaseSettings):
 
     # Redis
     redis_url: str = ""
+
+    # Hugging Face (remote reranking)
+    hf_token: str = ""
 
     # LangSmith
     langsmith_api_key: str = ""

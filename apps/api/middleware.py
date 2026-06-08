@@ -23,7 +23,8 @@ _PUBLIC_PATHS: set[str] = {"/", "/playground", "/util", "/health"}
 class AuthMiddleware(BaseHTTPMiddleware):
     """Validate Bearer token on every request.
 
-    If ``AUTH_SECRET`` is not set, all requests pass through (dev mode).
+    If ``AUTH_SECRET`` is not set, all requests pass through unauthenticated
+    (dev convenience). When set, a matching Bearer token is required.
     """
 
     async def dispatch(
@@ -31,15 +32,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        # Auth is mandatory. When AUTH_SECRET is not configured, refuse
-        # all protected requests so the operator notices.
+        # When AUTH_SECRET is not set, auth is disabled (dev convenience).
         if not settings.auth_secret:
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "detail": "Server misconfigured: AUTH_SECRET not set. Set it in .env or environment variables."
-                },
-            )
+            return await call_next(request)
 
         # Public paths are always open.
         if request.url.path in _PUBLIC_PATHS:

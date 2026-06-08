@@ -132,7 +132,13 @@ async def query_rag(request: QueryRequest, http_request: Request) -> QueryRespon
             for rc in state.retrieved_chunks
         ],
         reranked_chunks=[
-            RerankedChunk(chunk_id=rc.chunk_id, rank=rc.rank, score=rc.score)
+            RerankedChunk(
+                chunk_id=rc.chunk_id,
+                document_id=rc.document_id,
+                page=rc.page,
+                rank=rc.rank,
+                score=rc.score,
+            )
             for rc in state.reranked_chunks
         ],
         supporting_chunks=state.supporting_chunks,

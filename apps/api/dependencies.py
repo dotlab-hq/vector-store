@@ -32,14 +32,21 @@ def init_dependencies() -> None:
 
     set_retriever(hybrid_retriever)
 
-    # Lazy-load reranker — sentence-transformers + torch are heavy optional deps
+    # Prefer remote HF reranker (no local GPU/RAM needed); fall back to local
     try:
-        from src.retrieval.reranking.reranker import CrossEncoderReranker
+        from src.retrieval.reranking.remote_reranker import HfReranker
 
-        reranker = CrossEncoderReranker()
-    except ImportError:
-        reranker = None
-        logger.info("reranker_disabled", reason="sentence-transformers not installed")
+        reranker = HfReranker()
+        logger.info("reranker_initialized", backend="hf_inference_api")
+    except Exception:
+        try:
+            from src.retrieval.reranking.reranker import CrossEncoderReranker
+
+            reranker = CrossEncoderReranker()
+            logger.info("reranker_initialized", backend="local_cross_encoder")
+        except ImportError:
+            reranker = None
+            logger.info("reranker_disabled", reason="no reranker backend available")
     set_reranker(reranker)
 
 

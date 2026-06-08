@@ -31,7 +31,13 @@ async def reranking(state: RAGState) -> dict:
 
     # Build reranked-chunk snapshot
     reranked_snapshots = [
-        RerankedChunkSnapshot(chunk_id=r.chunk.id, rank=rank, score=float(r.score))
+        RerankedChunkSnapshot(
+            chunk_id=r.chunk.id,
+            document_id=r.chunk.document_id,
+            page=r.chunk.page_number,
+            rank=rank,
+            score=float(r.score),
+        )
         for rank, r in enumerate(reranked, start=1)
     ]
 

@@ -19,6 +19,8 @@ class RerankedChunkSnapshot(BaseModel):
     """Snapshot of a reranked chunk used to build the response payload."""
 
     chunk_id: str
+    document_id: str = ""
+    page: int | None = None
     rank: int
     score: float
 

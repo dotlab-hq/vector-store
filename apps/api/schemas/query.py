@@ -44,6 +44,8 @@ class RetrievedChunk(BaseModel):
 
 class RerankedChunk(BaseModel):
     chunk_id: str
+    document_id: str = ""
+    page: Optional[int] = None
     rank: int
     score: float
 
