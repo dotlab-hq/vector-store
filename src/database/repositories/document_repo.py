@@ -36,6 +36,7 @@ class DocumentRepository:
         metadata_json: str | None = None,
         s3_key: str | None = None,
         content_text: str | None = None,
+        bytes: int | None = None,
     ) -> int:
         values: dict[str, object] = {}
         if metadata_json is not None:
@@ -44,6 +45,8 @@ class DocumentRepository:
             values["s3_key"] = s3_key
         if content_text is not None:
             values["content_text"] = content_text
+        if bytes is not None:
+            values["bytes"] = bytes
         if not values:
             return 0
         result = await self.session.execute(

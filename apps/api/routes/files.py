@@ -154,6 +154,7 @@ async def upload_file(
                     }
                 ),
                 s3_key=s3_key,
+                bytes=len(file_bytes),
             )
             await session.commit()
 
