@@ -1,0 +1,77 @@
+name: Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    env:
+      OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      QDRANT_URL: ${{ secrets.QDRANT_URL }}
+      QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+      NEO4J_URI: ${{ secrets.NEO4J_URI }}
+      NEO4J_USER: ${{ secrets.NEO4J_USER }}
+      NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+      S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+      S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
+      S3_BUCKET: rag
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      NEO4J_ENABLED: "True"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint
+        run: uv run ruff check src/ apps/
+
+      - name: Format check
+        run: uv run ruff format --check src/ apps/
+
+      - name: Type check
+        run: uv run pyright src/ apps/
+
+      - name: Start server
+        run: uv run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 &
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "Server healthy"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server failed to start"
+          exit 1
+
+      - name: Check memory usage
+        run: |
+          PID=$(pgrep -f "uvicorn apps.api.main:app")
+          RSS_KB=$(awk '/VmRSS/{print $2}' /proc/$PID/status)
+          RSS_MB=$((RSS_KB / 1024))
+          echo "RSS: ${RSS_MB}MB"
+          if [ "$RSS_MB" -gt 512 ]; then
+            echo "FAIL: Memory ${RSS_MB}MB exceeds 512MB limit"
+            exit 1
+          fi
+          echo "OK: Memory within limit"
