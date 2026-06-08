@@ -6,6 +6,7 @@ Qdrant deployment that supports dense, sparse, and hybrid retrieval.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
 from typing import cast
 from uuid import uuid4
@@ -135,6 +136,10 @@ class QdrantVectorStore(VectorStore):
             return cast(qm.VectorStruct, {VECTOR_NAME: vector})
         return cast(qm.VectorStruct, vector)
 
+    async def _run_qdrant(self, fn, *args, **kwargs):  # noqa: ANN002
+        """Run a synchronous Qdrant client method in a thread to avoid blocking."""
+        return await asyncio.to_thread(fn, *args, **kwargs)
+
     def _ensure_index(self, field_name: str) -> None:
         """Create an index on a field if it doesn't exist."""
         try:
@@ -188,7 +193,8 @@ class QdrantVectorStore(VectorStore):
         if not query_embedding:
             return []
 
-        results = self._client.query_points(
+        results = await self._run_qdrant(
+            self._client.query_points,
             **self._query_kwargs(query_embedding),
             limit=top_k,
             with_payload=True,
@@ -242,7 +248,8 @@ class QdrantVectorStore(VectorStore):
                 )
             )
 
-        self._client.upsert(
+        await self._run_qdrant(
+            self._client.upsert,
             collection_name=COLLECTION_NAME,
             points=points,
         )
@@ -256,7 +263,8 @@ class QdrantVectorStore(VectorStore):
         if not chunk_ids:
             return
 
-        self._client.delete(
+        await self._run_qdrant(
+            self._client.delete,
             collection_name=COLLECTION_NAME,
             points_selector=qm.FilterSelector(
                 filter=qm.Filter(
@@ -270,6 +278,23 @@ class QdrantVectorStore(VectorStore):
             ),
         )
         logger.debug("qdrant_delete", count=len(chunk_ids))
+
+    async def delete_by_document_id(self, document_id: str) -> None:
+        """Delete all Qdrant points for a document. Used before re-indexing."""
+        await self._run_qdrant(
+            self._client.delete,
+            collection_name=COLLECTION_NAME,
+            points_selector=qm.FilterSelector(
+                filter=qm.Filter(
+                    must=[
+                        qm.FieldCondition(
+                            key="document_id",
+                            match=qm.MatchValue(value=document_id),
+                        )
+                    ]
+                )
+            ),
+        )
 
     async def search_in_stores(
         self,
@@ -298,7 +323,8 @@ class QdrantVectorStore(VectorStore):
 
         qdrant_filter = qm.Filter(must=must_conditions) if must_conditions else None
 
-        results = self._client.query_points(
+        results = await self._run_qdrant(
+            self._client.query_points,
             **self._query_kwargs(query_embedding),
             limit=fetch_k,
             query_filter=qdrant_filter,
@@ -336,7 +362,8 @@ class QdrantVectorStore(VectorStore):
         """
         # Fetch all matching points (Qdrant has no bulk payload-update, so we
         # scroll, patch, and upsert).
-        points, _ = self._client.scroll(
+        points, _ = await self._run_qdrant(
+            self._client.scroll,
             collection_name=COLLECTION_NAME,
             scroll_filter=qm.Filter(
                 must=[
@@ -367,9 +394,11 @@ class QdrantVectorStore(VectorStore):
                 )
             )
         if updated:
-            self._client.upsert(collection_name=COLLECTION_NAME, points=updated)
+            await self._run_qdrant(
+                self._client.upsert, collection_name=COLLECTION_NAME, points=updated
+            )
         return len(updated)
 
     async def count(self) -> int:
-        info = self._client.get_collection(COLLECTION_NAME)
+        info = await self._run_qdrant(self._client.get_collection, COLLECTION_NAME)
         return info.points_count or 0

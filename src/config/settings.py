@@ -83,5 +83,14 @@ class Settings(BaseSettings):
     vector_store_search_fanout: int = 4
     vector_store_worker_enabled: bool = True
 
+    # Task processor (general-purpose background work)
+    task_worker_concurrency: int = 5
+    task_worker_poll_interval_s: float = 2.0
+    task_worker_lease_minutes: int = 15
+    task_worker_retry_base_s: int = 30
+    task_worker_retry_cap_s: int = 3600
+    task_worker_retry_max: int = 5
+    task_worker_enabled: bool = True
+
 
 settings = Settings()

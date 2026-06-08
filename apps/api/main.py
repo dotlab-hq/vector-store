@@ -7,10 +7,8 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from apps.api.dependencies import (
     check_service_health,
-    get_scheduler,
     get_workflow,
     init_dependencies,
-    init_vector_store_scheduler,
     rebuild_bm25,
 )
 from apps.api.middleware import AuthMiddleware
@@ -40,8 +38,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except Exception as e:
         logger.warning("database_connection_failed", error=str(e))
 
-    init_vector_store_scheduler()
-    get_scheduler().start()
     try:
         init_dependencies()
         await rebuild_bm25()
@@ -49,12 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await check_service_health()
     except Exception as e:
         logger.warning("dependency_init_failed", error=str(e))
-        # scheduler still started — stores will be missing but vector store
-        # file processing won't crash; the worker checks for None stores
-    try:
-        yield
-    finally:
-        await get_scheduler().stop()
+    yield
 
 
 app = FastAPI(title="Agentic RAG", version="0.1.0", lifespan=lifespan)

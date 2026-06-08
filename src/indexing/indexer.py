@@ -28,6 +28,10 @@ class Indexer:
         self.bm25 = bm25_store
 
     async def index_document(self, document_id: str, batch_size: int = 15) -> None:
+        # Delete existing Qdrant and BM25 entries for this document (idempotent retry)
+        await self.qdrant.delete_by_document_id(document_id)
+        await self.bm25.delete_by_document_id(document_id)
+
         chunks_models = await self.repo.get_chunks_by_document(document_id)
         if not chunks_models:
             logger.warning("no_chunks_found", document_id=document_id)

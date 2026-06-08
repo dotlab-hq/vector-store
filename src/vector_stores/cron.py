@@ -71,6 +71,16 @@ class VectorStoreCron:
             if orphaned:
                 logger.info("vs_cron_released_stale_files", count=orphaned)
 
+            # 0b. Recover orphaned processing_tasks from worker crashes
+            from src.database.repositories import ProcessingTaskRepository
+
+            task_repo = ProcessingTaskRepository(session)
+            released_tasks = await task_repo.release_stale(
+                stale_minutes=settings.task_worker_lease_minutes
+            )
+            if released_tasks:
+                logger.info("vs_cron_released_orphaned_tasks", count=released_tasks)
+
             # 1. Re-promote eligible failed rows back to pending
             promoted = await vf_repo.sweep_failed_for_retry(max_retries=max_retries)
             if promoted:

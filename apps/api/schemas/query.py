@@ -98,4 +98,5 @@ IngestRequest = IngestTextRequest
 class IngestResponse(BaseModel):
     document_id: str
     title: str
-    chunks_created: int
+    chunks_created: int = 0
+    processing_status: str = "pending"

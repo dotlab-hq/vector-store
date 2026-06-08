@@ -23,7 +23,7 @@ class DocumentRepository:
             tags=json.dumps(document.tags),
             metadata_json=json.dumps(document.metadata),
             s3_key=document.metadata.get("s3_key"),
-            content_text=document.metadata.get("content_text", ""),
+            content_text=document.content_text or document.metadata.get("content_text", ""),
         )
         self.session.add(model)
         await self.session.flush()

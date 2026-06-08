@@ -28,6 +28,8 @@ COPY --from=builder /app/.venv ./.venv
 # Copy application code
 COPY src/ ./src/
 COPY apps/ ./apps/
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Set PATH to use venv
 ENV PATH="/app/.venv/bin:$PATH"
@@ -35,5 +37,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Expose API port
 EXPOSE 8000
 
-# Run API server
-CMD ["python", "-m", "apps.api.main"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["api"]

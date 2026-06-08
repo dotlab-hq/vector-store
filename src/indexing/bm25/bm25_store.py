@@ -27,13 +27,15 @@ class Bm25Store:
         from src.database.models import ChunkModel
 
         async with async_session_factory() as session:
-            result = await session.execute(select(ChunkModel.id, ChunkModel.content))
+            result = await session.execute(
+                select(ChunkModel.id, ChunkModel.document_id, ChunkModel.content)
+            )
             rows = result.fetchall()
 
         self.corpus = [row.content for row in rows]
         self.chunk_ids = [row.id for row in rows]
         self._metadata = {
-            row.id: Chunk(id=row.id, document_id="", content=row.content)
+            row.id: Chunk(id=row.id, document_id=row.document_id, content=row.content)
             for row in rows
         }
         self._rebuild()
@@ -86,6 +88,15 @@ class Bm25Store:
         self.chunk_ids = new_ids
         self._metadata = new_metadata
         self._rebuild()
+
+    async def delete_by_document_id(self, document_id: str) -> None:
+        """Delete all BM25 entries for a document. Used before re-indexing."""
+        ids_to_delete = {
+            cid for cid, chunk in self._metadata.items()
+            if chunk.document_id == document_id
+        }
+        if ids_to_delete:
+            await self.delete(list(ids_to_delete))
 
     async def count(self) -> int:
         return len(self.corpus)

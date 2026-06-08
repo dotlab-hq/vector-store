@@ -168,3 +168,33 @@ class VectorStoreFileBatchModel(Base):
     attributes_json: Mapped[str] = mapped_column(Text, default="{}")
 
     vector_store: Mapped["VectorStoreModel"] = relationship()
+
+
+class ProcessingTaskModel(Base):
+    """PostgreSQL-backed job queue. API writes rows; worker polls and processes."""
+
+    __tablename__ = "processing_tasks"
+    __table_args__ = (
+        Index(
+            "ix_task_status_priority_next",
+            "status",
+            "priority",
+            "next_attempt_at",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    task_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    priority: Mapped[int] = mapped_column(Integer, default=0)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    max_retries: Mapped[int] = mapped_column(Integer, default=5)
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    locked_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )

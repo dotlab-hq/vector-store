@@ -2,7 +2,7 @@
 
 Enterprise-grade Retrieval-Augmented Generation (RAG) platform targeting 10M+
 documents, built on LangGraph, LangChain, FastAPI, PostgreSQL, Redis, Qdrant,
-FAISS, and S3-compatible storage.
+and S3-compatible storage.
 
 The full design lives in [`AGENTS.md`](AGENTS.md), [`PLAN.md`](PLAN.md), and
 [`ARCHITECTURE.md`](ARCHITECTURE.md).
@@ -13,10 +13,10 @@ The full design lives in [`AGENTS.md`](AGENTS.md), [`PLAN.md`](PLAN.md), and
 .
 ├── apps/
 │   ├── api/        # FastAPI service (HTTP entry point)
-│   └── worker/     # Background worker (scheduler, cron, vector-store jobs)
+│   └── worker/     # Background worker (task processing, cron jobs)
 ├── src/            # All business logic
 │   ├── ingestion/  # Loaders, chunking, metadata extraction
-│   ├── indexing/   # FAISS, Qdrant, BM25 stores
+│   ├── indexing/   # Qdrant, BM25 stores
 │   ├── retrieval/  # Dense, sparse, hybrid, KG, reranking
 │   ├── graph/      # LangGraph workflow + nodes + routers
 │   ├── agents/     # Query agents (LCEL)
@@ -33,7 +33,9 @@ The full design lives in [`AGENTS.md`](AGENTS.md), [`PLAN.md`](PLAN.md), and
 ├── tests/          # unit / integration / evals
 ├── docs/
 ├── pyproject.toml  # uv-managed dependencies
-└── Dockerfile
+├── Dockerfile      # Multi-stage build (API + worker)
+├── entrypoint.sh   # Role dispatch: api | worker | smoke
+└── docker-compose.yml
 ```
 
 ## Prerequisites
@@ -44,7 +46,7 @@ The full design lives in [`AGENTS.md`](AGENTS.md), [`PLAN.md`](PLAN.md), and
 
 ```bash
 cp .env.example .env
-# then fill in OPENAI_API_KEY, database URL, etc.
+# then fill in OPENAI_API_KEY, DATABASE_URL, QDRANT_URL, etc.
 ```
 
 ## Install
@@ -53,12 +55,9 @@ cp .env.example .env
 uv sync
 ```
 
-This creates a `.venv` and installs runtime + dev dependencies in one step.
+## Run locally
 
-## Run
-
-There are three entry points. Run any of them with `uv run` so the venv and
-`PYTHONPATH` resolve correctly.
+All three entry points use `uv run` so the venv and `PYTHONPATH` resolve.
 
 ### 1. Hello-world LLM call (smoke test)
 
@@ -66,88 +65,144 @@ There are three entry points. Run any of them with `uv run` so the venv and
 uv run python -m src.main
 ```
 
-Translates "I love programming." to French via `ChatOpenAI`. Useful for
-verifying that `OPENAI_API_KEY` and the `src.llm` wrapper are wired up.
-
 ### 2. FastAPI service (HTTP API)
+
+The API provides query endpoints, file uploads, ingestion, and vector store
+management. It creates task rows in PostgreSQL and returns immediately — the
+worker handles the heavy processing.
 
 ```bash
 uv run uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Then:
-
 - Swagger UI → http://localhost:8000/docs
 - Healthcheck → http://localhost:8000/health
 - OpenAPI schema → http://localhost:8000/openapi.json
 
-### 3. Background worker (scheduler + vector-store jobs)
+**Requires a running worker** to process ingestion tasks. Start the worker in a
+separate terminal:
 
 ```bash
 uv run python -m apps.worker
 ```
 
-Runs the cron-driven jobs declared under `src/vector_stores/` (e.g. vector
-store maintenance, batch processing).
-
-## Test / Lint (planned)
-
-Per `AGENTS.md`, the project targets Ruff + Pyright once they are wired up.
-The dev extras are already declared in `pyproject.toml`:
+### 3. Background worker
 
 ```bash
-uv sync --extra dev
-uv run ruff check .
-uv run pyright
+uv run python -m apps.worker
 ```
 
-## Run with Docker
+Processes the task queue: document ingestion, text ingestion, document
+re-indexing, and vector store file tagging. Recovers stale tasks from crashes
+automatically on startup.
 
-The image is multi-stage: a `builder` stage installs dependencies into a uv
-managed venv, and a slim `runtime` stage copies only the venv and the
-application code. No compilers, no cache, no `.venv` in the final layer.
+## Deploy with Docker
+
+### Build
 
 ```bash
-# Build
-docker build -t vector-store:latest .
-
-# Run the FastAPI service (default CMD)
-docker run --rm -p 8000:8000 --env-file .env vector-store:latest
-
-# Run the worker
-docker run --rm --env-file .env vector-store:latest worker
-
-# Run the smoke test
-docker run --rm --env-file .env vector-store:latest smoke
+docker build -t agentic-rag:latest .
 ```
 
-The default `CMD` is `api`, so `docker run vector-store:latest` is equivalent
-to `docker run vector-store:latest api`.
+### Run via entrypoint
 
-## Environment
+The image uses `entrypoint.sh` to dispatch between three roles:
 
-All settings flow through `src/config/settings.py` (pydantic-settings). Do
-**not** read `os.environ` directly anywhere else. See `.env.example` for the
-full list; the most important keys:
+```bash
+# API (default)
+docker run --rm -p 8000:8000 --env-file .env agentic-rag:latest
 
-| Variable                    | Purpose                          |
-| --------------------------- | -------------------------------- |
-| `OPENAI_API_KEY`            | Required for chat + embeddings   |
-| `OPENAI_CHAT_MODEL`         | Default `gpt-4o`                 |
-| `OPENAI_EMBEDDING_MODEL`    | Default `text-embedding-3-small` |
-| `DATABASE_URL`              | PostgreSQL connection string     |
-| `REDIS_URL`                 | Cache + session store            |
-| `QDRANT_URL`                | Vector store (Qdrant)            |
-| `S3_ENDPOINT` / `S3_BUCKET` | Object storage for raw documents |
+# Worker
+docker run --rm --env-file .env agentic-rag:latest worker
 
-## Coding Rules (quick reference)
+# Smoke test
+docker run --rm --env-file .env agentic-rag:latest smoke
+```
+
+### Run with docker-compose (local development)
+
+The compose file starts a local PostgreSQL, Qdrant, Redis, the API, and a
+worker. All other services (S3, OpenAI, LangSmith) are cloud-hosted.
+
+```bash
+# Start everything
+docker compose up --build -d
+
+# Tail logs
+docker compose logs -f api worker
+
+# Stop
+docker compose down
+```
+
+### Architecture: API vs Worker
+
+| Component | Role | Ports | Lifecycle |
+|-----------|------|-------|-----------|
+| **API** | HTTP entry point — serves queries, file uploads, ingestion requests | 8000 | Runs until workflow ends |
+| **Worker** | Processes the `processing_tasks` queue (ingestion, indexing, VS tagging) + cron sweep | none | Runs until workflow ends; recovers on restart |
+
+The worker is the only process that does heavy work (S3 download, parsing,
+chunking, embedding, Qdrant/BM25 indexing). The API creates task rows in
+PostgreSQL and returns immediately (200). The worker picks them up, and stale
+tasks are automatically recovered on startup or via the cron sweep.
+
+## GitHub Actions workflow
+
+The `Run` workflow (`.github/workflows/run.yml`) runs the worker directly on
+the runner via `uv` — no Docker build, no image push. Triggered on a cron
+schedule (every 5 hours) or manual dispatch, with a 6-hour timeout.
+
+Each run:
+1. Installs Python 3.14 + dependencies via `uv sync`
+2. Runs `python -m apps.worker` for up to 6 hours
+3. The worker polls `processing_tasks`, runs ingestion/indexing, and executes
+   the `VectorStoreCron` sweep (retry failed files, expire stores, recover
+   stale tasks)
+4. When the job ends the runner is destroyed — no cleanup needed
+
+Stale tasks are recovered automatically on startup and on each cron tick.
+
+### Required GitHub Secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `DATABASE_URL` | PostgreSQL connection string (`postgresql://...?sslmode=require`) |
+| `REDIS_URL` | Redis connection string (`redis://default:pass@host:port`) |
+| `QDRANT_URL` | Qdrant server URL (e.g. `https://xyz.qdrant.io:6333`) |
+| `QDRANT_API_KEY` | Qdrant Cloud API key |
+| `S3_ACCESS_KEY` | AWS / S3-compatible access key |
+| `S3_SECRET_KEY` | AWS / S3-compatible secret key |
+| `S3_BUCKET` | S3 bucket name (default: `rag`) |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `OPENAI_BASE_URL` | (optional) Custom endpoint if using a proxy |
+| `AUTH_SECRET` | API auth secret |
+| `LANGSMITH_API_KEY` | (optional) LangSmith tracing |
+| `LANGSMITH_PROJECT` | (optional) LangSmith project name |
+| `LANGSMITH_TRACING` | (optional) Set `true` to enable |
+
+## Environment variables
+
+All settings flow through `src/config/settings.py` (pydantic-settings). See
+`.env.example` for the full list; the most important:
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `OPENAI_API_KEY` | Required for chat + embeddings | — |
+| `DATABASE_URL` | PostgreSQL connection string | — |
+| `REDIS_URL` | Cache + session store | — |
+| `QDRANT_URL` | Vector store server (empty = in-memory dev mode) | — |
+| `S3_ENDPOINT` | MinIO endpoint (empty = real AWS S3) | — |
+| `S3_BUCKET` | S3 bucket | `vector-store` |
+| `TASK_WORKER_CONCURRENCY` | Worker parallel task slots | `5` |
+| `TASK_WORKER_POLL_INTERVAL_S` | Seconds between poll cycles | `2.0` |
+| `TASK_WORKER_LEASE_MINUTES` | Stale task recovery threshold | `15` |
+
+## Coding Rules
 
 - Business logic lives in `src/`, never in `apps/`.
-- Every external service has an adapter behind a protocol (e.g. `VectorStore`,
-  `LLMAdapter`).
-- Prompts live in `src/generation/prompts/` only.
+- Every external service has an adapter behind a protocol (e.g. `VectorStore`).
 - All state and I/O is typed with Pydantic models.
-- Retrieval operations are traced via LangSmith.
 - No circular imports between `src/` modules.
 
 ## License

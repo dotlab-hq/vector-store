@@ -2,6 +2,7 @@ from .models import (
     Base,
     ChunkModel,
     DocumentModel,
+    ProcessingTaskModel,
     VectorStoreFileModel,
     VectorStoreModel,
 )
@@ -11,6 +12,7 @@ __all__ = [
     "Base",
     "ChunkModel",
     "DocumentModel",
+    "ProcessingTaskModel",
     "VectorStoreFileModel",
     "VectorStoreModel",
     "async_session_factory",

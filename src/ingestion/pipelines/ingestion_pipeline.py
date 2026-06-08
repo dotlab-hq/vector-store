@@ -21,27 +21,36 @@ logger = get_logger()
 
 
 class IngestionPipeline:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        embedder=None,
+        qdrant_store=None,
+        bm25_store=None,
+    ) -> None:
         self.session = session
         self.repo = DocumentRepository(session)
         self.chunker = ParentChildChunker()
         self.extractor = MetadataExtractor()
         self._loader_registry = DocumentLoaderRegistry()
         self.media_service = MediaProcessingService()
+        self._embedder = embedder
+        self._qdrant_store = qdrant_store
+        self._bm25_store = bm25_store
 
     def _get_loader(self, file_path: Path) -> DocumentLoader:
         return self._loader_registry.get_loader(file_path)
 
     async def _index_chunks(self, document_id: str) -> None:
         """Index document chunks into Qdrant and BM25 after DB storage."""
-        from apps.api.dependencies import bm25_store, embedder, qdrant_store
-
-        if not all([qdrant_store, bm25_store, embedder]):
+        if not all([self._qdrant_store, self._bm25_store, self._embedder]):
             logger.warning("stores_not_initialized", document_id=document_id)
             return
 
         try:
-            indexer = Indexer(self.session, embedder, qdrant_store, bm25_store)
+            indexer = Indexer(
+                self.session, self._embedder, self._qdrant_store, self._bm25_store
+            )
             await indexer.index_document(document_id)
         except Exception as e:
             import traceback
