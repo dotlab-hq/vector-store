@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,6 +34,21 @@ class Settings(BaseSettings):
     langsmith_api_key: str = ""
     langsmith_project: str = "vector-store"
     langsmith_tracing: bool = False
+
+    @field_validator(
+        "debug",
+        "langsmith_tracing",
+        "neo4j_enabled",
+        "qdrant_prefer_grpc",
+        "vector_store_worker_enabled",
+        "task_worker_enabled",
+        mode="before",
+    )
+    @classmethod
+    def _coerce_empty_bool(cls, v: str | bool) -> bool:
+        if isinstance(v, str):
+            return v.lower() in ("true", "1", "yes")
+        return bool(v)
 
     # Embedding
     embedding_dimension: int = 1536
