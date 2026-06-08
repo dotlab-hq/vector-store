@@ -3,6 +3,7 @@
 Mirror the public OpenAI Vector Stores API shape so callers can use the same
 JSON for both the official SDK and this service.
 """
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -314,7 +315,9 @@ class VectorStoreFileBatchObject(BaseModel):
     created_at: int  # epoch seconds
     vector_store_id: str
     status: Literal["in_progress", "completed", "cancelled", "failed"] = "in_progress"
-    file_counts: VectorStoreFileBatchFileCounts = Field(default_factory=VectorStoreFileBatchFileCounts)
+    file_counts: VectorStoreFileBatchFileCounts = Field(
+        default_factory=VectorStoreFileBatchFileCounts
+    )
 
 
 class PerFileConfig(BaseModel):

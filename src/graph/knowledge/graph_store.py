@@ -14,7 +14,9 @@ class KnowledgeGraphStore:
     def __init__(self, neo4j: Neo4jClient) -> None:
         self.neo4j = neo4j
 
-    async def ingest_chunk(self, chunk_id: str, content: str, metadata: dict | None = None) -> dict:
+    async def ingest_chunk(
+        self, chunk_id: str, content: str, metadata: dict | None = None
+    ) -> dict:
         """Extract entities and relationships from a chunk, store in Neo4j."""
         entities = await extract_entities(content)
         relationships = await extract_relationships(content, entities)
@@ -35,7 +37,9 @@ class KnowledgeGraphStore:
             rel_type = rel.get("relationship", "RELATED_TO")
             # Convert to safe Cypher relationship type (uppercase, underscores)
             safe_type = rel_type.upper().replace(" ", "_").replace("-", "_")
-            await self.neo4j.create_relationship(src, tgt, safe_type, {"chunk_id": chunk_id})
+            await self.neo4j.create_relationship(
+                src, tgt, safe_type, {"chunk_id": chunk_id}
+            )
 
         logger.info(
             "chunk_ingested_to_kg",

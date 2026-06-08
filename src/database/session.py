@@ -16,7 +16,7 @@ def _build_database_url(url: str) -> str:
     parsed = urlparse(url)
     params = parse_qs(parsed.query)
     params.pop("channel_binding", None)
-    sslmode = params.pop("sslmode", None)
+    params.pop("sslmode", None)
     clean_query = urlencode(params, doseq=True)
     clean_url = urlunparse(parsed._replace(query=clean_query))
     return clean_url
@@ -48,4 +48,6 @@ engine = create_async_engine(
     connect_args=_connect,
 )
 
-async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session_factory = async_sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)

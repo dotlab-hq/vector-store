@@ -3,6 +3,7 @@
 Given a Pydantic-validated filter object (constructed from the API request) and
 a chunk's attributes dict, returns whether the chunk matches.
 """
+
 from __future__ import annotations
 
 from typing import Any, Callable
@@ -56,9 +57,7 @@ def _eval_comparison(cf: ComparisonFilter, attrs: dict[str, Any]) -> bool:
     return False
 
 
-def evaluate(
-    f: CompoundFilter | None, attrs: dict[str, Any]
-) -> bool:
+def evaluate(f: CompoundFilter | None, attrs: dict[str, Any]) -> bool:
     """Evaluate an OpenAI compound filter against a chunk's attributes.
 
     A ``None`` filter matches everything.
@@ -78,6 +77,8 @@ def compile_predicate(
     f: CompoundFilter | None,
 ) -> Callable[[dict[str, Any]], bool]:
     """Return a predicate function bound to the given filter."""
+
     def predicate(attrs: dict[str, Any]) -> bool:
         return evaluate(f, attrs)
+
     return predicate

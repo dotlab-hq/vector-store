@@ -5,8 +5,12 @@ from src.shared.types import Chunk
 
 class ParentChildChunker:
     def __init__(self) -> None:
-        self.parent_chunker = SemanticChunker(max_chunk_tokens=settings.parent_chunk_max_tokens)
-        self.child_chunker = SemanticChunker(max_chunk_tokens=settings.child_chunk_max_tokens)
+        self.parent_chunker = SemanticChunker(
+            max_chunk_tokens=settings.parent_chunk_max_tokens
+        )
+        self.child_chunker = SemanticChunker(
+            max_chunk_tokens=settings.child_chunk_max_tokens
+        )
 
     def build(
         self,

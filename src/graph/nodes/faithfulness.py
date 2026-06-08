@@ -3,7 +3,10 @@ import re
 
 from src.graph.state.schemas import RAGState
 from src.llm import llm
-from src.generation.prompts.safe_format import fence_user_data, ANTI_INJECTION_SYSTEM_PREAMBLE
+from src.generation.prompts.safe_format import (
+    fence_user_data,
+    ANTI_INJECTION_SYSTEM_PREAMBLE,
+)
 from src.observability.logging import get_logger
 
 logger = get_logger()
@@ -28,7 +31,7 @@ def _parse_llm_json(raw: str) -> list:
     cleaned = re.sub(r"```\s*$", "", cleaned.strip())
     try:
         return json.loads(cleaned)
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return []
 
 
@@ -81,7 +84,12 @@ async def faithfulness_check(state: RAGState) -> dict:
     # Step 1: Extract claims
     fenced_answer = fence_user_data(state.response)
     extract_prompt = CLAIM_EXTRACTION_PROMPT.format(answer=fenced_answer)
-    extract_response = await llm.ainvoke([("system", f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Extract claims precisely."), ("human", extract_prompt)])
+    extract_response = await llm.ainvoke(
+        [
+            ("system", f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Extract claims precisely."),
+            ("human", extract_prompt),
+        ]
+    )
 
     claims = _parse_llm_json(extract_response.content)
 
@@ -107,7 +115,15 @@ async def faithfulness_check(state: RAGState) -> dict:
         context=fenced_context,
         claims=fenced_claims,
     )
-    verify_response = await llm.ainvoke([("system", f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Verify claims against context."), ("human", verify_prompt)])
+    verify_response = await llm.ainvoke(
+        [
+            (
+                "system",
+                f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Verify claims against context.",
+            ),
+            ("human", verify_prompt),
+        ]
+    )
 
     verifications = _parse_llm_json(verify_response.content)
 

@@ -28,9 +28,13 @@ router = APIRouter()
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 
-async def _build_document_info(reranked_results) -> tuple[dict[str, str], dict[str, str | None]]:
+async def _build_document_info(
+    reranked_results,
+) -> tuple[dict[str, str], dict[str, str | None]]:
     """Look up document titles and s3_keys for all document_ids referenced in reranked results."""
-    doc_ids = list({r.chunk.document_id for r in reranked_results if r.chunk.document_id})
+    doc_ids = list(
+        {r.chunk.document_id for r in reranked_results if r.chunk.document_id}
+    )
     if not doc_ids:
         return {}, {}
     try:
@@ -75,7 +79,9 @@ async def query_rag(request: QueryRequest, http_request: Request) -> QueryRespon
         state = result
 
     # Build structured citations & sources
-    document_titles, document_s3_keys = await _build_document_info(state.reranked_results)
+    document_titles, document_s3_keys = await _build_document_info(
+        state.reranked_results
+    )
     citation_builder = CitationBuilder(document_titles)
     citations, sources = citation_builder.build(state.reranked_results)
 

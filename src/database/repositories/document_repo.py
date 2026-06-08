@@ -82,14 +82,18 @@ class DocumentRepository:
 
     async def get_chunks_by_document(self, document_id: str) -> list[ChunkModel]:
         result = await self.session.execute(
-            select(ChunkModel).where(ChunkModel.document_id == document_id).order_by(ChunkModel.position)
+            select(ChunkModel)
+            .where(ChunkModel.document_id == document_id)
+            .order_by(ChunkModel.position)
         )
         return list(result.scalars().all())
 
     async def get_chunk(self, chunk_id: str) -> ChunkModel | None:
         return await self.session.get(ChunkModel, chunk_id)
 
-    async def get_documents_by_ids(self, document_ids: Sequence[str]) -> dict[str, DocumentModel]:
+    async def get_documents_by_ids(
+        self, document_ids: Sequence[str]
+    ) -> dict[str, DocumentModel]:
         """Batch lookup documents by id. Returns a dict id -> DocumentModel."""
         if not document_ids:
             return {}
@@ -121,13 +125,19 @@ class DocumentRepository:
     ) -> list[DocumentModel]:
         stmt = select(DocumentModel)
         if purpose:
-            stmt = stmt.where(DocumentModel.metadata_json.contains(f'"purpose": "{purpose}"'))
+            stmt = stmt.where(
+                DocumentModel.metadata_json.contains(f'"purpose": "{purpose}"')
+            )
         if after_id:
             if order == "asc":
                 stmt = stmt.where(DocumentModel.id > after_id)
             else:
                 stmt = stmt.where(DocumentModel.id < after_id)
-        stmt = stmt.order_by(DocumentModel.created_at.asc() if order == "asc" else DocumentModel.created_at.desc())
+        stmt = stmt.order_by(
+            DocumentModel.created_at.asc()
+            if order == "asc"
+            else DocumentModel.created_at.desc()
+        )
         stmt = stmt.limit(limit + 1)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

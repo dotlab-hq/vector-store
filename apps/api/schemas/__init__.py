@@ -1,4 +1,5 @@
 """Pydantic schemas package — split into submodules for clarity."""
+
 from apps.api.schemas.files import (
     FileDeletedResponse,
     FileListResponse,

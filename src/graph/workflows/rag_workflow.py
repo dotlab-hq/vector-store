@@ -27,14 +27,16 @@ async def regeneration(state: RAGState) -> dict:
     system_prompt = (
         ANTI_INJECTION_SYSTEM_PREAMBLE
         + " You are a precise, citation-backed assistant. Answer the user's question using ONLY the provided context."
-        " If the context does not contain enough information, say \"I don't have sufficient evidence to answer this question.\""
+        ' If the context does not contain enough information, say "I don\'t have sufficient evidence to answer this question."'
         " Never use external knowledge. Cite sources using [1], [2] inline markers matching the 1-based position in the context block."
         " Be concise and factual. If you cannot confidently answer from the context, do not answer."
         " Output JSON with keys: answer, short_answer."
     )
 
     context_block = fence_user_data(state.context or "")
-    question_block = fence_user_data(state.rewritten_query or state.original_query or "")
+    question_block = fence_user_data(
+        state.rewritten_query or state.original_query or ""
+    )
 
     human_prompt = (
         f"Context:\n{context_block}\n\n"
@@ -42,10 +44,12 @@ async def regeneration(state: RAGState) -> dict:
         "The previous answer was not faithful to the context. Please provide a more accurate answer grounded in the provided context only:"
     )
 
-    response = await llm.ainvoke([
-        ("system", system_prompt),
-        ("human", human_prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            ("system", system_prompt),
+            ("human", human_prompt),
+        ]
+    )
 
     import json as _json
     import re as _re

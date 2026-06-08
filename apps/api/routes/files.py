@@ -1,11 +1,20 @@
 """OpenAI-compatible file endpoints backed by the local app stack."""
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+)
 from fastapi.responses import Response
 
 from apps.api.schemas.files import FileDeletedResponse, FileListResponse, FileObject
@@ -44,11 +53,11 @@ def _normalize_file_status(status: str | None) -> str:
 
 
 def _file_object_from_row(row, purpose: str, status: str = "uploaded") -> FileObject:
-    metadata = {}
+    metadata: dict = {}
     try:
         metadata = json.loads(row.metadata_json or "{}")
     except Exception:
-        metadata = {}
+        pass
     return FileObject(
         id=row.id,
         bytes=row.bytes or 0,
@@ -82,7 +91,9 @@ async def list_files(
 ) -> FileListResponse:
     async with async_session_factory() as session:
         repo = DocumentRepository(session)
-        rows = await repo.list_documents(limit=limit, after_id=after, order=order, purpose=purpose)
+        rows = await repo.list_documents(
+            limit=limit, after_id=after, order=order, purpose=purpose
+        )
 
     has_more = len(rows) > limit
     rows = rows[:limit]
@@ -141,7 +152,11 @@ async def upload_file(
             )
             saved = await repo.create_document(document)
             s3_key = f"files/{saved.id}/{file.filename or 'upload.bin'}"
-            await s3.upload(s3_key, file_bytes, content_type=file.content_type or "application/octet-stream")
+            await s3.upload(
+                s3_key,
+                file_bytes,
+                content_type=file.content_type or "application/octet-stream",
+            )
             await repo.update_document_metadata(
                 saved.id,
                 metadata_json=json.dumps(
@@ -161,10 +176,17 @@ async def upload_file(
             background_tasks.add_task(_process_uploaded_file, saved.id)
             row = await repo.get_document_by_id(saved.id)
         if row is None:
-            raise HTTPException(status_code=500, detail="File upload completed but record was not found")
+            raise HTTPException(
+                status_code=500, detail="File upload completed but record was not found"
+            )
         return _file_object_from_row(row, purpose)
     except Exception as exc:
-        logger.error("file_upload_failed", error=str(exc), error_type=type(exc).__name__, exc_info=True)
+        logger.error(
+            "file_upload_failed",
+            error=str(exc),
+            error_type=type(exc).__name__,
+            exc_info=True,
+        )
         raise HTTPException(status_code=502, detail="Failed to upload file.") from exc
 
 
@@ -182,7 +204,9 @@ async def _set_file_status(document_id: str, status: str) -> None:
                 return
             meta = json.loads(row.metadata_json or "{}")
             meta["processing_status"] = status
-            await repo.update_document_metadata(document_id, metadata_json=json.dumps(meta))
+            await repo.update_document_metadata(
+                document_id, metadata_json=json.dumps(meta)
+            )
             await session.commit()
     except Exception:
         pass
@@ -243,10 +267,13 @@ async def _complete_vs_files_for_document(document_id: str) -> None:
         async with async_session_factory() as session:
             vf_repo = VectorStoreFileRepository(session)
             from src.database.repositories import DocumentRepository
+
             doc_repo = DocumentRepository(session)
 
             # 1. Mark all pending VF rows as completed
-            affected_store_ids = await vf_repo.complete_pending_for_document(document_id)
+            affected_store_ids = await vf_repo.complete_pending_for_document(
+                document_id
+            )
             await session.commit()
 
             if not affected_store_ids:
@@ -258,7 +285,9 @@ async def _complete_vs_files_for_document(document_id: str) -> None:
             for store_id in affected_store_ids:
                 await doc_repo.update_chunks_vector_store_id(document_id, store_id)
                 if qdrant_store is not None:
-                    await qdrant_store.update_chunks_vector_store_id(document_id, store_id)
+                    await qdrant_store.update_chunks_vector_store_id(
+                        document_id, store_id
+                    )
                 await vf_repo.update_store_file_counts(store_id)
             await session.commit()
 
@@ -334,5 +363,7 @@ async def retrieve_file_content(file_id: str) -> Response:
         raise HTTPException(status_code=404, detail=f"File '{file_id}' not found")
     data = await _load_file_bytes(row)
     if data is None:
-        raise HTTPException(status_code=404, detail=f"Content for file '{file_id}' not available")
+        raise HTTPException(
+            status_code=404, detail=f"Content for file '{file_id}' not available"
+        )
     return Response(content=data, media_type="application/octet-stream")

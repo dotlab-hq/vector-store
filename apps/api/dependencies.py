@@ -35,6 +35,7 @@ def init_dependencies() -> None:
     # Lazy-load reranker — sentence-transformers + torch are heavy optional deps
     try:
         from src.retrieval.reranking.reranker import CrossEncoderReranker
+
         reranker = CrossEncoderReranker()
     except ImportError:
         reranker = None

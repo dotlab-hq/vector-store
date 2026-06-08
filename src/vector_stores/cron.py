@@ -2,11 +2,11 @@
 
 Runs as an asyncio task alongside the worker.
 """
+
 from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import update
 

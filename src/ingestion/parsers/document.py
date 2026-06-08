@@ -12,9 +12,18 @@ from src.llm.openai import llm
 
 class DocumentParser(MediaParser):
     def can_parse(self, file_path: Path) -> bool:
-        return file_path.suffix.lower() in {".pdf", ".docx", ".doc", ".pptx", ".ppt", ".odt"}
+        return file_path.suffix.lower() in {
+            ".pdf",
+            ".docx",
+            ".doc",
+            ".pptx",
+            ".ppt",
+            ".odt",
+        }
 
-    async def parse(self, file_path: Path, file_bytes: bytes, fallback_text: str = "") -> ParserSignal | None:
+    async def parse(
+        self, file_path: Path, file_bytes: bytes, fallback_text: str = ""
+    ) -> ParserSignal | None:
         if file_path.suffix.lower() == ".pdf":
             page_signal = await self._parse_pdf_pages(file_path, fallback_text)
             if page_signal is not None:
@@ -40,7 +49,9 @@ class DocumentParser(MediaParser):
         except Exception:
             return None
 
-    async def _parse_pdf_pages(self, file_path: Path, fallback_text: str) -> ParserSignal | None:
+    async def _parse_pdf_pages(
+        self, file_path: Path, fallback_text: str
+    ) -> ParserSignal | None:
         try:
             from pypdf import PdfReader
 
@@ -48,11 +59,15 @@ class DocumentParser(MediaParser):
             page_texts = [(page.extract_text() or "").strip() for page in reader.pages]
             if any(page_texts):
                 return await self._summarize_text_pages(page_texts, fallback_text)
-            return await self._summarize_scanned_pages(file_path, len(reader.pages), fallback_text)
+            return await self._summarize_scanned_pages(
+                file_path, len(reader.pages), fallback_text
+            )
         except Exception:
             return None
 
-    async def _summarize_text_pages(self, page_texts: list[str], fallback_text: str) -> ParserSignal | None:
+    async def _summarize_text_pages(
+        self, page_texts: list[str], fallback_text: str
+    ) -> ParserSignal | None:
         async def summarize_page(page_number: int, page_text: str) -> str:
             if not page_text.strip():
                 return ""
@@ -70,11 +85,16 @@ class DocumentParser(MediaParser):
             return (getattr(response, "content", "") or "").strip()
 
         summaries = await asyncio.gather(
-            *(summarize_page(page_number, page_text) for page_number, page_text in enumerate(page_texts))
+            *(
+                summarize_page(page_number, page_text)
+                for page_number, page_text in enumerate(page_texts)
+            )
         )
         merged = "\n\n".join(
             f"# Page {index + 1}\n{summary or page_text}"
-            for index, (summary, page_text) in enumerate(zip(summaries, page_texts, strict=False))
+            for index, (summary, page_text) in enumerate(
+                zip(summaries, page_texts, strict=False)
+            )
             if summary or page_text
         ).strip()
         if not merged:
@@ -126,7 +146,9 @@ class DocumentParser(MediaParser):
                                 },
                                 {
                                     "type": "image_url",
-                                    "image_url": {"url": f"data:image/png;base64,{payload}"},
+                                    "image_url": {
+                                        "url": f"data:image/png;base64,{payload}"
+                                    },
                                 },
                             ]
                         )
@@ -136,7 +158,9 @@ class DocumentParser(MediaParser):
             except Exception:
                 return ""
 
-        descriptions = await asyncio.gather(*(describe_page(i) for i in range(len(doc))))
+        descriptions = await asyncio.gather(
+            *(describe_page(i) for i in range(len(doc)))
+        )
         merged = "\n\n".join(
             f"# Page {index + 1}\n{description}".strip()
             for index, description in enumerate(descriptions)

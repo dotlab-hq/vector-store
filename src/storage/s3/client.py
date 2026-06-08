@@ -40,7 +40,9 @@ class S3Client:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
-    async def upload(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> S3Object:
+    async def upload(
+        self, key: str, data: bytes, content_type: str = "application/octet-stream"
+    ) -> S3Object:
         """Upload raw bytes to S3 via presigned URL PUT.
 
         Boto3's default chunked transfer encoding is incompatible with
@@ -60,7 +62,9 @@ class S3Client:
         logger.info("s3_upload", key=key, size=len(data))
         return S3Object(key=key, size=len(data), content_type=content_type)
 
-    async def _presigned_put_upload(self, key: str, data: bytes, content_type: str) -> None:
+    async def _presigned_put_upload(
+        self, key: str, data: bytes, content_type: str
+    ) -> None:
         """Generate a presigned PUT URL and upload data via httpx."""
         presigned_url = await self._run_sync(
             self._client.generate_presigned_url,
@@ -121,7 +125,9 @@ class S3Client:
         except ClientError:
             return False
 
-    async def list_objects(self, prefix: str = "", max_keys: int = 1000) -> list[S3Object]:
+    async def list_objects(
+        self, prefix: str = "", max_keys: int = 1000
+    ) -> list[S3Object]:
         """List objects under a prefix.
 
         Some S3-compatible providers (e.g. the one behind

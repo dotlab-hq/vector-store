@@ -9,8 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.database.repositories import DocumentRepository
 from src.ingestion.chunking.parent_child import ParentChildChunker
-from src.ingestion.loaders import MarkItDownLoader
-from src.ingestion.loaders.base import DocumentLoader, RawDocument
+from src.ingestion.loaders.base import DocumentLoader
 from src.ingestion.loaders.registry import DocumentLoaderRegistry
 from src.ingestion.media.processor import MediaProcessingService
 from src.ingestion.metadata.extractor import MetadataExtractor
@@ -46,6 +45,7 @@ class IngestionPipeline:
             await indexer.index_document(document_id)
         except Exception as e:
             import traceback
+
             logger.warning(
                 "indexing_failed",
                 document_id=document_id,
@@ -73,7 +73,9 @@ class IngestionPipeline:
     async def ingest(self, file_path: Path, title_override: str = "") -> Document:
         loader = self._get_loader(file_path)
         raw = loader.load(file_path)
-        media_result = await self.media_service.process(file_path, fallback_text=raw.content)
+        media_result = await self.media_service.process(
+            file_path, fallback_text=raw.content
+        )
         raw.content = media_result.enriched_content or raw.content
         raw.metadata.update(media_result.metadata)
         raw.metadata["media_signals"] = [
@@ -90,7 +92,9 @@ class IngestionPipeline:
         raw.metadata["media_summary"] = media_result.summary
 
         if not raw.content.strip():
-            raw.content = raw.metadata.get("media_summary", "") or raw.metadata.get("title", file_path.stem)
+            raw.content = raw.metadata.get("media_summary", "") or raw.metadata.get(
+                "title", file_path.stem
+            )
             raw.metadata["content_fallback"] = "summary_only"
 
         document = self.extractor.extract(raw, file_path)
@@ -173,7 +177,10 @@ class IngestionPipeline:
             await self._set_processing_status(document_id, "error")
             return None
 
-        suffix = Path(document.source_path or document.title or "upload.bin").suffix or ".bin"
+        suffix = (
+            Path(document.source_path or document.title or "upload.bin").suffix
+            or ".bin"
+        )
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(file_bytes)
             tmp_path = Path(tmp.name)
@@ -181,7 +188,9 @@ class IngestionPipeline:
         try:
             loader = self._get_loader(tmp_path)
             raw = loader.load(tmp_path)
-            media_result = await self.media_service.process(tmp_path, fallback_text=raw.content)
+            media_result = await self.media_service.process(
+                tmp_path, fallback_text=raw.content
+            )
             raw.content = media_result.enriched_content or raw.content
             raw.metadata.update(media_result.metadata)
             raw.metadata["media_signals"] = [
@@ -194,11 +203,15 @@ class IngestionPipeline:
                 }
                 for signal in media_result.signals
             ]
-            raw.metadata["media_scores"] = [asdict(score) for score in media_result.scores]
+            raw.metadata["media_scores"] = [
+                asdict(score) for score in media_result.scores
+            ]
             raw.metadata["media_summary"] = media_result.summary
 
             if not raw.content.strip():
-                raw.content = raw.metadata.get("media_summary", "") or raw.metadata.get("title", document.title)
+                raw.content = raw.metadata.get("media_summary", "") or raw.metadata.get(
+                    "title", document.title
+                )
                 raw.metadata["content_fallback"] = "summary_only"
 
             updated_metadata = {
@@ -247,7 +260,6 @@ class IngestionPipeline:
             tmp_path.unlink(missing_ok=True)
 
     async def ingest_text(self, text: str, title: str = "Untitled") -> Document:
-        raw = RawDocument(content=text, metadata={"title": title})
         document = Document(
             id=uuid4().hex,
             title=title,

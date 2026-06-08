@@ -34,11 +34,8 @@ class ContextBuilder:
             if token_count + chunk_tokens > self.max_tokens:
                 break
 
-            context_parts.append(
-                f"[{idx}] (chunk_id: {result.chunk.id})\n{content}"
-            )
+            context_parts.append(f"[{idx}] (chunk_id: {result.chunk.id})\n{content}")
             supporting.append(result.chunk.id)
             token_count += chunk_tokens
 
         return "\n\n---\n\n".join(context_parts), supporting
-

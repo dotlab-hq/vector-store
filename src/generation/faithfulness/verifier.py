@@ -2,9 +2,11 @@ import json
 from pathlib import Path
 
 from src.llm import llm
-from src.generation.prompts.safe_format import fence_user_data, ANTI_INJECTION_SYSTEM_PREAMBLE
+from src.generation.prompts.safe_format import (
+    fence_user_data,
+    ANTI_INJECTION_SYSTEM_PREAMBLE,
+)
 from src.observability.logging import get_logger
-from src.shared.types import RetrievalResult
 
 logger = get_logger()
 
@@ -18,9 +20,7 @@ VERIFICATION_PROMPT = (_PROMPT_DIR / "faithfulness_prompt.txt").read_text()
 
 
 class FaithfulnessVerifier:
-    async def verify(
-        self, response: str, context: str
-    ) -> tuple[float, int, int]:
+    async def verify(self, response: str, context: str) -> tuple[float, int, int]:
         if not context or not response:
             return 1.0, 0, 0
 
@@ -44,13 +44,18 @@ class FaithfulnessVerifier:
     async def _extract_claims(self, answer: str) -> list[str]:
         fenced_answer = fence_user_data(answer)
         prompt = CLAIM_EXTRACTION_PROMPT.format(answer=fenced_answer)
-        response = await llm.ainvoke([
-            ("system", f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Extract claims precisely as JSON array."),
-            ("human", prompt),
-        ])
+        response = await llm.ainvoke(
+            [
+                (
+                    "system",
+                    f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Extract claims precisely as JSON array.",
+                ),
+                ("human", prompt),
+            ]
+        )
         try:
             return json.loads(response.content)
-        except (json.JSONDecodeError, ValueError):
+        except json.JSONDecodeError, ValueError:
             return []
 
     async def _verify_claims(self, claims: list[str], context: str) -> list[bool]:
@@ -60,12 +65,17 @@ class FaithfulnessVerifier:
             context=fenced_context,
             claims=fenced_claims,
         )
-        response = await llm.ainvoke([
-            ("system", f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Verify claims against context."),
-            ("human", prompt),
-        ])
+        response = await llm.ainvoke(
+            [
+                (
+                    "system",
+                    f"{ANTI_INJECTION_SYSTEM_PREAMBLE} Verify claims against context.",
+                ),
+                ("human", prompt),
+            ]
+        )
         try:
             verifications = json.loads(response.content)
             return [v.get("supported", False) for v in verifications]
-        except (json.JSONDecodeError, ValueError):
+        except json.JSONDecodeError, ValueError:
             return [False] * len(claims)

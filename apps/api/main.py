@@ -18,13 +18,12 @@ from apps.api.routes import documents, files, ingestion, query, vector_stores
 from src.database import Base, engine
 from src.observability.logging import get_logger, setup_logging
 
+from src.config import settings
+
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 setup_logging()
 logger = get_logger()
-
-# Settings for validation
-from src.config import settings
 
 
 @asynccontextmanager
@@ -80,7 +79,9 @@ async def add_security_headers(request, call_next):
             "frame-ancestors 'none'"
         )
     else:
-        response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; frame-ancestors 'none'"
+        )
     return response
 
 

@@ -72,8 +72,25 @@ class DocumentLoaderRegistry:
                 exts |= loader.MARKITDOWN_EXTENSIONS
         # Manually cover format_loader extensions
         exts |= {
-            ".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls", ".ods",
-            ".csv", ".tsv", ".json", ".html", ".htm", ".txt", ".md", ".markdown",
-            ".rst", ".xml", ".yaml", ".yml",
+            ".pdf",
+            ".docx",
+            ".doc",
+            ".pptx",
+            ".ppt",
+            ".xlsx",
+            ".xls",
+            ".ods",
+            ".csv",
+            ".tsv",
+            ".json",
+            ".html",
+            ".htm",
+            ".txt",
+            ".md",
+            ".markdown",
+            ".rst",
+            ".xml",
+            ".yaml",
+            ".yml",
         }
         return exts

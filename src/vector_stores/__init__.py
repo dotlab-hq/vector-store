@@ -1,4 +1,5 @@
 """Vector stores package — OpenAI-compatible vector store abstraction."""
+
 from src.vector_stores.models import (
     VECTOR_STORE_OBJECT,
     VectorStoreFileStatus,

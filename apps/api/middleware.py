@@ -5,6 +5,7 @@ public pages (``/``, ``/playground``, ``/util``, ``/health``).
 
 When ``AUTH_SECRET`` env var is empty, auth is disabled (dev convenience).
 """
+
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
@@ -35,7 +36,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if not settings.auth_secret:
             return JSONResponse(
                 status_code=500,
-                content={"detail": "Server misconfigured: AUTH_SECRET not set. Set it in .env or environment variables."},
+                content={
+                    "detail": "Server misconfigured: AUTH_SECRET not set. Set it in .env or environment variables."
+                },
             )
 
         # Public paths are always open.
@@ -49,7 +52,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if scheme.lower() != "bearer" or not token:
             return JSONResponse(
                 status_code=401,
-                content={"detail": "Missing or invalid Authorization header. Expected: Bearer <AUTH_SECRET>"},
+                content={
+                    "detail": "Missing or invalid Authorization header. Expected: Bearer <AUTH_SECRET>"
+                },
             )
 
         if not _constant_time_compare(token, settings.auth_secret):
@@ -64,6 +69,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 def _constant_time_compare(a: str, b: str) -> bool:
     """Compare two strings in constant time to prevent timing attacks."""
     import hmac
+
     return hmac.compare_digest(a.encode(), b.encode())
 
 

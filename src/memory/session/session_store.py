@@ -25,11 +25,13 @@ class SessionStore:
     async def add_message(self, session_id: str, role: str, content: str) -> None:
         key = f"session:{session_id}"
         messages = await self.get_messages(session_id)
-        messages.append({
-            "role": role,
-            "content": content,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        messages.append(
+            {
+                "role": role,
+                "content": content,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         await self._redis.setex(key, SESSION_TTL, json.dumps(messages))
         logger.info("session_message_added", session_id=session_id, role=role)
 

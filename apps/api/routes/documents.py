@@ -59,7 +59,9 @@ async def download_document(
         document = await repo.get_document_by_id(document_id)
 
     if not document:
-        raise HTTPException(status_code=404, detail=f"Document '{document_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Document '{document_id}' not found"
+        )
 
     s3_key = document.s3_key
     if not s3_key:

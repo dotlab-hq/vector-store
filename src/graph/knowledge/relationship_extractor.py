@@ -28,7 +28,7 @@ def _parse_llm_json(raw: str) -> list[dict]:
     cleaned = re.sub(r"```\s*$", "", cleaned.strip())
     try:
         return json.loads(cleaned)
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return []
 
 
@@ -50,10 +50,16 @@ async def extract_relationships(text: str, entities: list[dict]) -> list[dict]:
         user_data=truncated,
         entities=", ".join(entity_names),
     )
-    response = await llm.ainvoke([
-        ("system", ANTI_INJECTION_SYSTEM_PREAMBLE + " Extract relationships between entities precisely as JSON."),
-        ("human", prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            (
+                "system",
+                ANTI_INJECTION_SYSTEM_PREAMBLE
+                + " Extract relationships between entities precisely as JSON.",
+            ),
+            ("human", prompt),
+        ]
+    )
 
     relationships = _parse_llm_json(response.content)
 
@@ -64,7 +70,13 @@ async def extract_relationships(text: str, entities: list[dict]) -> list[dict]:
         src = rel.get("source", "").strip()
         tgt = rel.get("target", "").strip()
         rel_type = rel.get("relationship", "").strip()
-        if src and tgt and rel_type and src.lower() in entity_set and tgt.lower() in entity_set:
+        if (
+            src
+            and tgt
+            and rel_type
+            and src.lower() in entity_set
+            and tgt.lower() in entity_set
+        ):
             valid.append(rel)
 
     logger.info("relationships_extracted", count=len(valid))

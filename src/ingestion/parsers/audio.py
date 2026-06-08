@@ -14,7 +14,9 @@ class AudioParser(MediaParser):
     def can_parse(self, file_path: Path) -> bool:
         return file_path.suffix.lower() in {".mp3", ".wav", ".m4a", ".ogg", ".flac"}
 
-    async def parse(self, file_path: Path, file_bytes: bytes, fallback_text: str = "") -> ParserSignal | None:
+    async def parse(
+        self, file_path: Path, file_bytes: bytes, fallback_text: str = ""
+    ) -> ParserSignal | None:
         mime_type, _ = mimetypes.guess_type(str(file_path))
         try:
             payload = base64.b64encode(file_bytes).decode("ascii")
@@ -48,7 +50,10 @@ class AudioParser(MediaParser):
                 content=content.strip(),
                 confidence=0.9,
                 source="llm_audio",
-                metadata={"mime_type": mime_type or "", "fallback_text_length": len(fallback_text)},
+                metadata={
+                    "mime_type": mime_type or "",
+                    "fallback_text_length": len(fallback_text),
+                },
             )
         except Exception:
             return None

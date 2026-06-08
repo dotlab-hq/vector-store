@@ -74,6 +74,7 @@ class Indexer:
                 )
             except Exception as e:
                 import traceback
+
                 logger.error(
                     "batch_indexing_failed",
                     document_id=document_id,

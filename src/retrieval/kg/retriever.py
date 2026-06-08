@@ -41,7 +41,9 @@ class KGRetriever:
             entity_name, subgraph = result
             context_parts = [f"Entity: {entity_name}"]
             for edge in subgraph.get("edges", []):
-                context_parts.append(f"{edge['source']} --[{edge['type']}]--> {edge['target']}")
+                context_parts.append(
+                    f"{edge['source']} --[{edge['type']}]--> {edge['target']}"
+                )
 
             if len(context_parts) > 1:
                 chunk = Chunk(

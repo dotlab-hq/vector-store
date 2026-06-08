@@ -56,7 +56,9 @@ class Bm25Store:
             chunk = self._metadata.get(chunk_id)
             if chunk:
                 results.append(
-                    RetrievalResult(chunk=chunk, score=float(scores[idx]), source="bm25")
+                    RetrievalResult(
+                        chunk=chunk, score=float(scores[idx]), source="bm25"
+                    )
                 )
         return results
 

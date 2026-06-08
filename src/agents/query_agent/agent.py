@@ -24,40 +24,56 @@ logger = get_logger()
 
 async def _classify_intent(query: str) -> QueryClassification:
     prompt = format_prompt_with_user_data(INTENT_CLASSIFICATION_PROMPT, user_data=query)
-    response = await llm.ainvoke([
-        ("system", ANTI_INJECTION_SYSTEM_PREAMBLE + " You are a precise classifier."),
-        ("human", prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            (
+                "system",
+                ANTI_INJECTION_SYSTEM_PREAMBLE + " You are a precise classifier.",
+            ),
+            ("human", prompt),
+        ]
+    )
     try:
         data = json.loads(response.content)
         return QueryClassification(**data)
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return QueryClassification(intent=QueryIntent.SIMPLE, confidence=0.5)
 
 
 async def _rewrite_query(query: str) -> str:
     prompt = format_prompt_with_user_data(QUERY_REWRITING_PROMPT, user_data=query)
-    response = await llm.ainvoke([
-        ("system", ANTI_INJECTION_SYSTEM_PREAMBLE + " You are a query rewriting engine."),
-        ("human", prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            (
+                "system",
+                ANTI_INJECTION_SYSTEM_PREAMBLE + " You are a query rewriting engine.",
+            ),
+            ("human", prompt),
+        ]
+    )
     try:
         data = json.loads(response.content)
         return RewrittenQuery(**data).rewritten
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return query
 
 
 async def _decompose_query(query: str) -> DecomposedQuery:
     prompt = format_prompt_with_user_data(QUERY_DECOMPOSITION_PROMPT, user_data=query)
-    response = await llm.ainvoke([
-        ("system", ANTI_INJECTION_SYSTEM_PREAMBLE + " You are a query decomposition engine."),
-        ("human", prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            (
+                "system",
+                ANTI_INJECTION_SYSTEM_PREAMBLE
+                + " You are a query decomposition engine.",
+            ),
+            ("human", prompt),
+        ]
+    )
     try:
         data = json.loads(response.content)
         return DecomposedQuery(**data)
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return DecomposedQuery(original=query, sub_queries=[query])
 
 
@@ -75,7 +91,11 @@ async def query_understanding_node(query: str) -> dict:
     )
 
     decomposed = None
-    if classification.intent in {QueryIntent.MULTI_HOP, QueryIntent.COMPARATIVE, QueryIntent.ANALYTICAL}:
+    if classification.intent in {
+        QueryIntent.MULTI_HOP,
+        QueryIntent.COMPARATIVE,
+        QueryIntent.ANALYTICAL,
+    }:
         decomposed = await _decompose_query(rewritten)
         logger.info("query_decomposed", sub_query_count=len(decomposed.sub_queries))
 

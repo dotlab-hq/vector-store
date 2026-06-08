@@ -1,4 +1,5 @@
 """Vector store service — orchestration for create, attach, search, cancel."""
+
 from __future__ import annotations
 
 import json
@@ -7,11 +8,6 @@ from uuid import uuid4
 
 from sqlalchemy import update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
-
-
-def _utcnow() -> datetime:
-    """Naive UTC — matches SQLAlchemy's func.now()."""
-    return datetime.utcnow()
 
 from apps.api.schemas.vector_stores import (
     AutoChunkingStrategy,
@@ -43,6 +39,7 @@ from apps.api.schemas.vector_stores import (
     chunking_strategy_to_internal,
 )
 from src.database.models import (
+    DocumentModel,
     VectorStoreFileBatchModel,
     VectorStoreFileModel,
     VectorStoreModel,
@@ -54,7 +51,6 @@ from src.vector_stores.models import (
     VECTOR_STORE_FILE_BATCH_ID_PREFIX,
     VECTOR_STORE_FILE_ID_PREFIX,
     VECTOR_STORE_ID_PREFIX,
-    TERMINAL_FILE_STATUSES,
 )
 from src.vector_stores.repository import (
     VectorStoreFileBatchRepository,
@@ -63,6 +59,11 @@ from src.vector_stores.repository import (
 )
 
 logger = get_logger()
+
+
+def _utcnow() -> datetime:
+    """Naive UTC — matches SQLAlchemy's func.now()."""
+    return datetime.utcnow()
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +120,9 @@ def _to_vector_store_object(
     expires_after = None
     expires_at_unix = None
     if store.expires_after_days is not None:
-        expires_after = ExpiresAfter(anchor="last_active_at", days=store.expires_after_days)
+        expires_after = ExpiresAfter(
+            anchor="last_active_at", days=store.expires_after_days
+        )
     if store.expires_at is not None:
         expires_at_unix = int(store.expires_at.timestamp())
 
@@ -128,7 +131,9 @@ def _to_vector_store_object(
         name=store.name or "",
         status=store.status or "in_progress",
         file_counts=file_counts,
-        last_active_at=int(store.last_active_at.timestamp()) if store.last_active_at else 0,
+        last_active_at=int(store.last_active_at.timestamp())
+        if store.last_active_at
+        else 0,
         created_at=int(store.created_at.timestamp()) if store.created_at else 0,
         bytes=store.usage_bytes or 0,
         metadata=metadata,
@@ -174,7 +179,7 @@ def _to_vector_store_file_object(
     attributes: dict = {}
     try:
         attributes = json.loads(vf.attributes_json or "{}")
-    except (json.JSONDecodeError, TypeError):
+    except json.JSONDecodeError, TypeError:
         attributes = {}
 
     last_error: LastError | None = None
@@ -248,9 +253,7 @@ class VectorStoreService:
         expires_after_days = None
         if request.expires_after is not None:
             expires_after_days = request.expires_after.days
-            expires_at = _utcnow() + timedelta(
-                days=expires_after_days
-            )
+            expires_at = _utcnow() + timedelta(days=expires_after_days)
 
         metadata_json = json.dumps(request.metadata or {})
         store = VectorStoreModel(
@@ -285,7 +288,7 @@ class VectorStoreService:
             meta = json.loads(doc.metadata_json or "{}")
             if meta.get("processing_status") in ("processed", "completed"):
                 return True
-        except (json.JSONDecodeError, TypeError):
+        except json.JSONDecodeError, TypeError:
             pass
         # Authoritative path: do chunks actually exist?
         chunks = await self.doc_repo.get_chunks_by_document(doc.id)
@@ -315,13 +318,17 @@ class VectorStoreService:
             # Idempotent: check if already attached
             existing = await self.vf_repo.get_by_store_and_document(store_id, fid)
             if existing is not None:
-                results.append(_to_vector_store_file_object(existing, store_id, chunking))
+                results.append(
+                    _to_vector_store_file_object(existing, store_id, chunking)
+                )
                 continue
             # If the source document is already fully processed (ingested/chunked),
             # mark the vector-store file as completed immediately — there is nothing
             # left for a background worker to do.  We also need to tag the Qdrant
             # chunks with the store ID so search_in_stores can find them.
-            initial_status = "completed" if await self._is_document_ready(doc) else "pending"
+            initial_status = (
+                "completed" if await self._is_document_ready(doc) else "pending"
+            )
             vf = VectorStoreFileModel(
                 id=_new_file_id(),
                 vector_store_id=store_id,
@@ -336,6 +343,7 @@ class VectorStoreService:
                 await self.doc_repo.update_chunks_vector_store_id(fid, store_id)
                 # Tag Qdrant payloads
                 from apps.api.dependencies import qdrant_store
+
                 if qdrant_store is not None:
                     await qdrant_store.update_chunks_vector_store_id(fid, store_id)
             results.append(_to_vector_store_file_object(vf, store_id, chunking))
@@ -417,7 +425,10 @@ class VectorStoreService:
             if existing.status in ("cancelled", "failed"):
                 # Reset to pending for re-processing
                 await self.vf_repo.update_status(
-                    existing.id, status="pending", failure_reason=None, next_attempt_at=None
+                    existing.id,
+                    status="pending",
+                    failure_reason=None,
+                    next_attempt_at=None,
                 )
                 existing = await self.vf_repo.get(existing.id)
             await self.session.commit()
@@ -427,7 +438,9 @@ class VectorStoreService:
         if doc is None:
             return None
         attributes_json = json.dumps(request.attributes or {})
-        initial_status = "completed" if await self._is_document_ready(doc) else "pending"
+        initial_status = (
+            "completed" if await self._is_document_ready(doc) else "pending"
+        )
         vf = VectorStoreFileModel(
             id=_new_file_id(),
             vector_store_id=store_id,
@@ -441,8 +454,11 @@ class VectorStoreService:
         if initial_status == "completed":
             await self.doc_repo.update_chunks_vector_store_id(request.file_id, store_id)
             from apps.api.dependencies import qdrant_store
+
             if qdrant_store is not None:
-                await qdrant_store.update_chunks_vector_store_id(request.file_id, store_id)
+                await qdrant_store.update_chunks_vector_store_id(
+                    request.file_id, store_id
+                )
         await self.vf_repo.update_store_file_counts(store_id)
         # Bump last_active_at
         await self.vs_repo.update(store_id, last_active_at=_utcnow())
@@ -510,7 +526,9 @@ class VectorStoreService:
             # has_more detection first
             has_more_raw = len(files) > limit
             files = files[:limit]
-            files = [f for f in files if f.status not in ("completed", "cancelled", "failed")]
+            files = [
+                f for f in files if f.status not in ("completed", "cancelled", "failed")
+            ]
             data = [_to_vector_store_file_object(f, store_id, chunking) for f in files]
             has_more = has_more_raw or len(data) > limit
         else:
@@ -570,7 +588,7 @@ class VectorStoreService:
         attributes: dict = {}
         try:
             attributes = json.loads(vf.attributes_json or "{}")
-        except (json.JSONDecodeError, TypeError):
+        except json.JSONDecodeError, TypeError:
             attributes = {}
         # Map to FileContentItem: one item per chunk
         data: list[FileContentItem] = []
@@ -585,9 +603,7 @@ class VectorStoreService:
             attributes=attributes,
         )
 
-    async def delete_file(
-        self, store_id: str, file_id: str
-    ) -> DeleteResponse | None:
+    async def delete_file(self, store_id: str, file_id: str) -> DeleteResponse | None:
         vf = await self.vf_repo.get(file_id)
         if vf is None or vf.vector_store_id != store_id:
             return None
@@ -626,12 +642,6 @@ class VectorStoreService:
             ]
         # else: empty batch (the spec allows POST /file_batches with body '{}')
 
-        default_chunking = _derive_chunking_strategy(
-            store.chunking_strategy,
-            store.chunk_size_tokens,
-            store.chunk_overlap_tokens,
-        )
-
         batch = VectorStoreFileBatchModel(
             id=_new_batch_id(),
             vector_store_id=store_id,
@@ -646,9 +656,7 @@ class VectorStoreService:
                 store_id, cfg.file_id
             )
             if existing is not None:
-                await self.vf_repo.update_attributes(
-                    existing.id, cfg.attributes or {}
-                )
+                await self.vf_repo.update_attributes(existing.id, cfg.attributes or {})
                 # Re-attach to this batch (allow re-use across batches).
                 await self.session.execute(
                     sa_update(VectorStoreFileModel)
@@ -726,9 +734,7 @@ class VectorStoreService:
             has_more_raw = len(files) > limit
             files = files[:limit]
             files = [
-                f
-                for f in files
-                if f.status not in ("completed", "cancelled", "failed")
+                f for f in files if f.status not in ("completed", "cancelled", "failed")
             ]
             data = [_to_vector_store_file_object(f, store_id, chunking) for f in files]
             has_more = has_more_raw or len(data) > limit
@@ -891,9 +897,7 @@ class VectorStoreService:
             search_query=queries,
         )
 
-    async def _get_file_id_for_chunk(
-        self, chunk_id: str, document_id: str
-    ) -> str:
+    async def _get_file_id_for_chunk(self, chunk_id: str, document_id: str) -> str:
         """Look up the vector_store_file_id for a chunk by document id.
 
         In our model, one document maps to one vector_store_file per store.

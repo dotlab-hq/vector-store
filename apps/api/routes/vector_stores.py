@@ -15,6 +15,7 @@ Mirrors the public OpenAI Vector Stores REST API:
     GET    /vector_stores/{id}/files/{fid}/content       get file content
     POST   /vector_stores/{id}/search                    search
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -78,7 +79,9 @@ async def get_vector_store(vector_store_id: str) -> VectorStoreObject:
     async with _service_in_session() as svc:
         result = await svc.get_store(vector_store_id)
     if result is None:
-        raise HTTPException(status_code=404, detail=f"Vector store '{vector_store_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Vector store '{vector_store_id}' not found"
+        )
     return result
 
 
@@ -90,7 +93,9 @@ async def modify_vector_store(
     async with _service_in_session() as svc:
         result = await svc.update_store(vector_store_id, request)
     if result is None:
-        raise HTTPException(status_code=404, detail=f"Vector store '{vector_store_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Vector store '{vector_store_id}' not found"
+        )
     return result
 
 
@@ -99,16 +104,16 @@ async def delete_vector_store(vector_store_id: str) -> DeleteResponse:
     async with _service_in_session() as svc:
         result = await svc.delete_store(vector_store_id)
     if result is None:
-        raise HTTPException(status_code=404, detail=f"Vector store '{vector_store_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Vector store '{vector_store_id}' not found"
+        )
     return result
 
 
 # ── Files ───────────────────────────────────────────────────────────
 
 
-@router.post(
-    "/{vector_store_id}/files", response_model=VectorStoreFileObject
-)
+@router.post("/{vector_store_id}/files", response_model=VectorStoreFileObject)
 async def attach_file(
     vector_store_id: str,
     request: CreateVectorStoreFileRequest,
@@ -123,9 +128,7 @@ async def attach_file(
     return result
 
 
-@router.get(
-    "/{vector_store_id}/files", response_model=ListVectorStoreFilesResponse
-)
+@router.get("/{vector_store_id}/files", response_model=ListVectorStoreFilesResponse)
 async def list_files(
     vector_store_id: str,
     limit: int = Query(20, ge=1, le=100),
@@ -135,9 +138,7 @@ async def list_files(
     order: str = Query("desc"),
 ) -> ListVectorStoreFilesResponse:
     if order not in ("asc", "desc"):
-        raise HTTPException(
-            status_code=400, detail="order must be 'asc' or 'desc'"
-        )
+        raise HTTPException(status_code=400, detail="order must be 'asc' or 'desc'")
     async with _service_in_session() as svc:
         return await svc.list_files(
             vector_store_id,
@@ -149,9 +150,7 @@ async def list_files(
         )
 
 
-@router.get(
-    "/{vector_store_id}/files/{file_id}", response_model=VectorStoreFileObject
-)
+@router.get("/{vector_store_id}/files/{file_id}", response_model=VectorStoreFileObject)
 async def get_file(vector_store_id: str, file_id: str) -> VectorStoreFileObject:
     async with _service_in_session() as svc:
         result = await svc.get_file(vector_store_id, file_id)
@@ -163,9 +162,7 @@ async def get_file(vector_store_id: str, file_id: str) -> VectorStoreFileObject:
     return result
 
 
-@router.post(
-    "/{vector_store_id}/files/{file_id}", response_model=VectorStoreFileObject
-)
+@router.post("/{vector_store_id}/files/{file_id}", response_model=VectorStoreFileObject)
 async def update_file_attributes(
     vector_store_id: str,
     file_id: str,
@@ -181,9 +178,7 @@ async def update_file_attributes(
     return result
 
 
-@router.delete(
-    "/{vector_store_id}/files/{file_id}", response_model=DeleteResponse
-)
+@router.delete("/{vector_store_id}/files/{file_id}", response_model=DeleteResponse)
 async def remove_file(vector_store_id: str, file_id: str) -> DeleteResponse:
     async with _service_in_session() as svc:
         result = await svc.delete_file(vector_store_id, file_id)
@@ -199,9 +194,7 @@ async def remove_file(vector_store_id: str, file_id: str) -> DeleteResponse:
     "/{vector_store_id}/files/{file_id}/content",
     response_model=FileContentResponse,
 )
-async def get_file_content(
-    vector_store_id: str, file_id: str
-) -> FileContentResponse:
+async def get_file_content(vector_store_id: str, file_id: str) -> FileContentResponse:
     async with _service_in_session() as svc:
         result = await svc.get_file_content(vector_store_id, file_id)
     if result is None:
@@ -264,9 +257,7 @@ async def list_batch_files(
     order: str = Query("desc"),
 ) -> ListVectorStoreFilesResponse:
     if order not in ("asc", "desc"):
-        raise HTTPException(
-            status_code=400, detail="order must be 'asc' or 'desc'"
-        )
+        raise HTTPException(status_code=400, detail="order must be 'asc' or 'desc'")
     async with _service_in_session() as svc:
         result = await svc.list_batch_files(
             vector_store_id,

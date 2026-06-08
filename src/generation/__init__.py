@@ -2,4 +2,10 @@ from src.generation.citations.builder import CitationBuilder, CitationItem, Sour
 from src.generation.context.builder import ContextBuilder
 from src.generation.faithfulness.verifier import FaithfulnessVerifier
 
-__all__ = ["CitationBuilder", "CitationItem", "SourceItem", "ContextBuilder", "FaithfulnessVerifier"]
+__all__ = [
+    "CitationBuilder",
+    "CitationItem",
+    "SourceItem",
+    "ContextBuilder",
+    "FaithfulnessVerifier",
+]

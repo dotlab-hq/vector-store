@@ -210,7 +210,11 @@ class CSVLoader(DocumentLoader):
             if not rows:
                 return RawDocument(
                     content="",
-                    metadata={"title": file_path.stem, "extension": file_path.suffix.lower(), "converter": "csv"},
+                    metadata={
+                        "title": file_path.stem,
+                        "extension": file_path.suffix.lower(),
+                        "converter": "csv",
+                    },
                     source_path=str(file_path),
                 )
 
@@ -229,7 +233,9 @@ class CSVLoader(DocumentLoader):
                 "columns": headers,
             }
 
-            return RawDocument(content=content, metadata=metadata, source_path=str(file_path))
+            return RawDocument(
+                content=content, metadata=metadata, source_path=str(file_path)
+            )
         except Exception as e:
             logger.warning("csv_load_failed", file=str(file_path), error=str(e))
             return RawDocument(content="", metadata={}, source_path=str(file_path))
@@ -266,7 +272,9 @@ class JSONLoader(DocumentLoader):
                 "record_count": record_count,
             }
 
-            return RawDocument(content=content, metadata=metadata, source_path=str(file_path))
+            return RawDocument(
+                content=content, metadata=metadata, source_path=str(file_path)
+            )
         except Exception as e:
             logger.warning("json_load_failed", file=str(file_path), error=str(e))
             return RawDocument(content="", metadata={}, source_path=str(file_path))
@@ -297,7 +305,11 @@ class ExcelLoader(DocumentLoader):
                 headers = [str(cell) if cell is not None else "" for cell in rows[0]]
                 lines = [f"# Sheet: {sheet_name}", " | ".join(headers)]
                 for row in rows[1:]:
-                    lines.append(" | ".join(str(cell) if cell is not None else "" for cell in row))
+                    lines.append(
+                        " | ".join(
+                            str(cell) if cell is not None else "" for cell in row
+                        )
+                    )
                 sheet_parts.append("\n".join(lines))
 
             wb.close()
@@ -311,7 +323,9 @@ class ExcelLoader(DocumentLoader):
                 "sheet_names": wb.sheetnames,
             }
 
-            return RawDocument(content=content, metadata=metadata, source_path=str(file_path))
+            return RawDocument(
+                content=content, metadata=metadata, source_path=str(file_path)
+            )
         except ImportError:
             logger.warning("openpyxl_not_installed", file=str(file_path))
             return RawDocument(content="", metadata={}, source_path=str(file_path))
@@ -340,7 +354,9 @@ class TextLoader(DocumentLoader):
                 "char_count": len(content),
             }
 
-            return RawDocument(content=content, metadata=metadata, source_path=str(file_path))
+            return RawDocument(
+                content=content, metadata=metadata, source_path=str(file_path)
+            )
         except Exception as e:
             logger.warning("text_load_failed", file=str(file_path), error=str(e))
             return RawDocument(content="", metadata={}, source_path=str(file_path))
@@ -366,7 +382,9 @@ class XMLLoader(DocumentLoader):
                 "char_count": len(content),
             }
 
-            return RawDocument(content=content, metadata=metadata, source_path=str(file_path))
+            return RawDocument(
+                content=content, metadata=metadata, source_path=str(file_path)
+            )
         except Exception as e:
             logger.warning("xml_load_failed", file=str(file_path), error=str(e))
             return RawDocument(content="", metadata={}, source_path=str(file_path))

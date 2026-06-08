@@ -35,8 +35,15 @@ def _parse_llm_json(raw: str) -> dict:
     """Parse a JSON object from LLM output, tolerating fences and think tags."""
     cleaned = raw or ""
     # Strip <think>...</think> (and other reasoning tags like <analysis>...</analysis>)
-    cleaned = re.sub(r"<think(?:ing)?>.*?</think(?:ing)?>", "", cleaned, flags=re.DOTALL | re.IGNORECASE)
-    cleaned = re.sub(r"<analysis>.*?</analysis>", "", cleaned, flags=re.DOTALL | re.IGNORECASE)
+    cleaned = re.sub(
+        r"<think(?:ing)?>.*?</think(?:ing)?>",
+        "",
+        cleaned,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"<analysis>.*?</analysis>", "", cleaned, flags=re.DOTALL | re.IGNORECASE
+    )
     # Strip ```json ... ``` or ``` ... ``` code fences
     cleaned = re.sub(r"```(?:json)?\s*", "", cleaned)
     cleaned = re.sub(r"```\s*$", "", cleaned.strip())
@@ -50,13 +57,13 @@ def _parse_llm_json(raw: str) -> dict:
             data = json.loads(candidate)
             if isinstance(data, dict):
                 return data
-        except (json.JSONDecodeError, ValueError):
+        except json.JSONDecodeError, ValueError:
             pass
     try:
         data = json.loads(cleaned)
         if isinstance(data, dict):
             return data
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         pass
     return {}
 
@@ -82,7 +89,9 @@ async def generation(state: RAGState) -> dict:
     # The prompt file has ``Context:`` and ``Question:`` placeholders.
     # We split the template into system (everything before ``Context:``) and
     # reconstruct the human message ourselves so we can control the structure.
-    system_prompt = template.split("Context:")[0].strip() if template else _DEFAULT_SYSTEM
+    system_prompt = (
+        template.split("Context:")[0].strip() if template else _DEFAULT_SYSTEM
+    )
     if not template:
         system_prompt = ANTI_INJECTION_SYSTEM_PREAMBLE + " " + system_prompt
 
@@ -94,10 +103,12 @@ async def generation(state: RAGState) -> dict:
         f"Context:\n{context_block}\n\nQuestion:\n{question_block}\n\nAnswer:"
     )
 
-    response = await llm.ainvoke([
-        ("system", system_prompt),
-        ("human", human_prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            ("system", system_prompt),
+            ("human", human_prompt),
+        ]
+    )
 
     parsed = _parse_llm_json(response.content)
     answer = str(parsed.get("answer") or "").strip() or response.content.strip()

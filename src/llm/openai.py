@@ -4,7 +4,11 @@ from langchain_openai import ChatOpenAI
 
 from src.config import settings
 
-base_url = settings.openai_base_url or os.environ.get("OPENAI_BASE_URL") or os.environ.get("OPENAI_API_BASE")
+base_url = (
+    settings.openai_base_url
+    or os.environ.get("OPENAI_BASE_URL")
+    or os.environ.get("OPENAI_API_BASE")
+)
 
 llm = ChatOpenAI(
     model=settings.openai_chat_model,

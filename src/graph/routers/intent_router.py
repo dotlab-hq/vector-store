@@ -1,6 +1,5 @@
 from src.graph.state.schemas import RAGState
 from src.observability.logging import get_logger
-from src.shared.types import QueryIntent
 
 logger = get_logger()
 

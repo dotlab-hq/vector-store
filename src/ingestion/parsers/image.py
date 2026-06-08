@@ -12,9 +12,19 @@ from src.llm.openai import llm
 
 class ImageParser(MediaParser):
     def can_parse(self, file_path: Path) -> bool:
-        return file_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".gif"}
+        return file_path.suffix.lower() in {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".webp",
+            ".bmp",
+            ".tiff",
+            ".gif",
+        }
 
-    async def parse(self, file_path: Path, file_bytes: bytes, fallback_text: str = "") -> ParserSignal | None:
+    async def parse(
+        self, file_path: Path, file_bytes: bytes, fallback_text: str = ""
+    ) -> ParserSignal | None:
         mime_type, _ = mimetypes.guess_type(str(file_path))
         if not mime_type:
             return None
@@ -31,7 +41,12 @@ class ImageParser(MediaParser):
                                     "Extract OCR text, objects, people, layout, charts, and visible context."
                                 ),
                             },
-                            {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{payload}"}},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{payload}"
+                                },
+                            },
                         ]
                     )
                 ]
@@ -44,7 +59,10 @@ class ImageParser(MediaParser):
                 content=content.strip(),
                 confidence=0.94,
                 source="llm_image",
-                metadata={"mime_type": mime_type, "fallback_text_length": len(fallback_text)},
+                metadata={
+                    "mime_type": mime_type,
+                    "fallback_text_length": len(fallback_text),
+                },
             )
         except Exception:
             return None

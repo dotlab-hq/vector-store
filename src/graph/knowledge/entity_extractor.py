@@ -20,7 +20,7 @@ def _parse_llm_json(raw: str) -> list[dict]:
     cleaned = re.sub(r"```\s*$", "", cleaned.strip())
     try:
         return json.loads(cleaned)
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         return []
 
 
@@ -35,10 +35,16 @@ async def extract_entities(text: str) -> list[dict]:
     truncated = text[:4000] if len(text) > 4000 else text
 
     prompt = format_prompt_with_user_data(ENTITY_EXTRACTION_PROMPT, user_data=truncated)
-    response = await llm.ainvoke([
-        ("system", ANTI_INJECTION_SYSTEM_PREAMBLE + " Extract named entities precisely as JSON."),
-        ("human", prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            (
+                "system",
+                ANTI_INJECTION_SYSTEM_PREAMBLE
+                + " Extract named entities precisely as JSON.",
+            ),
+            ("human", prompt),
+        ]
+    )
 
     entities = _parse_llm_json(response.content)
 

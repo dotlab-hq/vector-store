@@ -21,5 +21,7 @@ class MediaParser(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def parse(self, file_path: Path, file_bytes: bytes, fallback_text: str = "") -> ParserSignal | None:
+    async def parse(
+        self, file_path: Path, file_bytes: bytes, fallback_text: str = ""
+    ) -> ParserSignal | None:
         raise NotImplementedError

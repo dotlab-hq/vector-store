@@ -51,7 +51,9 @@ class Neo4jClient:
             records = await result.data()
             return records
 
-    async def create_entity(self, name: str, entity_type: str, properties: dict | None = None) -> dict:
+    async def create_entity(
+        self, name: str, entity_type: str, properties: dict | None = None
+    ) -> dict:
         """Create or merge an entity node."""
         query = """
         MERGE (e:Entity {name: $name})
@@ -59,7 +61,11 @@ class Neo4jClient:
         SET e += $properties
         RETURN e {.*}
         """
-        params = {"name": name, "entity_type": entity_type, "properties": properties or {}}
+        params = {
+            "name": name,
+            "entity_type": entity_type,
+            "properties": properties or {},
+        }
         results = await self.run_query(query, params)
         return results[0] if results else {}
 
@@ -109,7 +115,9 @@ class Neo4jClient:
         MATCH path = (e:Entity {name: $name})-[*1..$depth]-(related:Entity)
         RETURN path
         """
-        results = await self.run_query(query, {"name": entity_name, "depth": safe_depth})
+        results = await self.run_query(
+            query, {"name": entity_name, "depth": safe_depth}
+        )
 
         nodes: dict[str, dict] = {}
         edges: list[dict] = []
@@ -125,11 +133,13 @@ class Neo4jClient:
             for rel in path.relationships:
                 start_name = rel.start_node.get("name", "")
                 end_name = rel.end_node.get("name", "")
-                edges.append({
-                    "source": start_name,
-                    "target": end_name,
-                    "type": rel.type,
-                })
+                edges.append(
+                    {
+                        "source": start_name,
+                        "target": end_name,
+                        "type": rel.type,
+                    }
+                )
 
         return {"nodes": list(nodes.values()), "edges": edges}
 

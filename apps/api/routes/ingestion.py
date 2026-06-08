@@ -19,7 +19,9 @@ MAX_TEXT_LENGTH = 500_000
 
 
 @router.post("/ingest/text", response_model=IngestResponse)
-async def ingest_text(text: str = Form(...), title: str = Form("Untitled")) -> IngestResponse:
+async def ingest_text(
+    text: str = Form(...), title: str = Form("Untitled")
+) -> IngestResponse:
     """Ingest raw text content."""
     async with async_session_factory() as session:
         pipeline = IngestionPipeline(session)
@@ -52,12 +54,16 @@ async def ingest_file(
 
     # Validate file size (max 50MB)
     if file.size and file.size > MAX_FILE_SIZE_MB * 1024 * 1024:
-        raise HTTPException(status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit")
+        raise HTTPException(
+            status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit"
+        )
 
     # Read file bytes and write to a temp file
     file_bytes = await file.read()
     if len(file_bytes) > MAX_FILE_SIZE_MB * 1024 * 1024:
-        raise HTTPException(status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit")
+        raise HTTPException(
+            status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit"
+        )
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(file_bytes)
         tmp_path = Path(tmp.name)
@@ -108,11 +114,15 @@ async def ingest_file_or_text(
 
         # Validate file size before reading into memory
         if file.size and file.size > MAX_FILE_SIZE_MB * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit")
+            raise HTTPException(
+                status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit"
+            )
 
         file_bytes = await file.read()
         if len(file_bytes) > MAX_FILE_SIZE_MB * 1024 * 1024:
-            raise HTTPException(status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit")
+            raise HTTPException(
+                status_code=413, detail=f"File exceeds {MAX_FILE_SIZE_MB}MB limit"
+            )
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(file_bytes)
@@ -138,7 +148,10 @@ async def ingest_file_or_text(
 
     elif text.strip():
         if len(text) > MAX_TEXT_LENGTH:
-            raise HTTPException(status_code=413, detail=f"Text exceeds {MAX_TEXT_LENGTH} character limit")
+            raise HTTPException(
+                status_code=413,
+                detail=f"Text exceeds {MAX_TEXT_LENGTH} character limit",
+            )
         async with async_session_factory() as session:
             pipeline = IngestionPipeline(session)
             document = await pipeline.ingest_text(text, title=title or "Untitled")
@@ -184,7 +197,9 @@ async def get_document_chunks(document_id: str) -> DocumentChunksResponse:
         chunks = await repo.get_chunks_by_document(document_id)
 
     if not chunks:
-        raise HTTPException(status_code=404, detail=f"No chunks found for document '{document_id}'")
+        raise HTTPException(
+            status_code=404, detail=f"No chunks found for document '{document_id}'"
+        )
 
     return DocumentChunksResponse(
         document_id=document_id,

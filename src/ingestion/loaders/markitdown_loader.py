@@ -20,15 +20,44 @@ logger = structlog.get_logger()
 # All extensions MarkItDown supports
 MARKITDOWN_EXTENSIONS = {
     # Documents
-    ".pdf", ".docx", ".doc", ".odt", ".pptx", ".ppt", ".odp",
+    ".pdf",
+    ".docx",
+    ".doc",
+    ".odt",
+    ".pptx",
+    ".ppt",
+    ".odp",
     # Spreadsheets
-    ".xlsx", ".xls", ".ods", ".csv", ".tsv",
+    ".xlsx",
+    ".xls",
+    ".ods",
+    ".csv",
+    ".tsv",
     # Text / Structured
-    ".txt", ".md", ".json", ".xml", ".yaml", ".yml", ".html", ".htm",
+    ".txt",
+    ".md",
+    ".json",
+    ".xml",
+    ".yaml",
+    ".yml",
+    ".html",
+    ".htm",
     # Images
-    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tiff", ".tif", ".svg",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".svg",
     # Audio
-    ".mp3", ".wav", ".m4a", ".ogg", ".flac",
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".ogg",
+    ".flac",
     # Archives
     ".zip",
     # E-books

@@ -5,6 +5,7 @@ delimiters that the model is trained to treat as data, not instructions. The
 system prompt explicitly instructs the model to ignore any instructions inside
 delimited blocks.
 """
+
 from __future__ import annotations
 
 import re
@@ -19,7 +20,9 @@ USER_DATA_END = "</user_data>"
 # we don't try to block every known injection; we just remove the most blatant
 # ones and rely on delimiter fences + system-prompt instructions for the rest.
 _INJECTION_PATTERNS = [
-    re.compile(r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions", re.IGNORECASE),
+    re.compile(
+        r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions", re.IGNORECASE
+    ),
     re.compile(r"disregard\s+(all\s+)?(previous|prior|above)", re.IGNORECASE),
     re.compile(r"forget\s+(everything|all)", re.IGNORECASE),
     re.compile(r"<\|im_start\|>.*?<\|im_end\|>", re.DOTALL),
@@ -59,7 +62,9 @@ def fence_user_data(text: str) -> str:
     return f"{USER_DATA_DELIM}{sanitized}{USER_DATA_END}"
 
 
-def format_prompt_with_user_data(template: str, *, user_data: str, **kwargs: object) -> str:
+def format_prompt_with_user_data(
+    template: str, *, user_data: str, **kwargs: object
+) -> str:
     """Safely render a prompt template that includes user data.
 
     Replaces ``{user_data}`` with a fenced version of the data. Other ``{...}``

@@ -13,7 +13,9 @@ async def context_building(state: RAGState) -> dict:
 
     context, supporting = _context_builder.build(list(state.reranked_results))
 
-    logger.info("context_built", chunk_count=len(supporting), context_length=len(context))
+    logger.info(
+        "context_built", chunk_count=len(supporting), context_length=len(context)
+    )
     return {
         "context": context,
         "supporting_chunks": supporting,

@@ -19,10 +19,15 @@ async def reranking(state: RAGState) -> dict:
     if _reranker is None:
         # Reranker unavailable — pass retrieval results through unchanged
         logger.info("reranker_skipped", result_count=len(state.retrieval_results))
-        return {"reranked_results": list(state.retrieval_results), "reranked_chunks": []}
+        return {
+            "reranked_results": list(state.retrieval_results),
+            "reranked_chunks": [],
+        }
 
     query = state.rewritten_query or state.original_query
-    reranked = await _reranker.rerank(query, state.retrieval_results, top_k=settings.rerank_top_k)
+    reranked = await _reranker.rerank(
+        query, state.retrieval_results, top_k=settings.rerank_top_k
+    )
 
     # Build reranked-chunk snapshot
     reranked_snapshots = [
@@ -30,5 +35,9 @@ async def reranking(state: RAGState) -> dict:
         for rank, r in enumerate(reranked, start=1)
     ]
 
-    logger.info("reranking_done", input_count=len(state.retrieval_results), output_count=len(reranked))
+    logger.info(
+        "reranking_done",
+        input_count=len(state.retrieval_results),
+        output_count=len(reranked),
+    )
     return {"reranked_results": reranked, "reranked_chunks": reranked_snapshots}

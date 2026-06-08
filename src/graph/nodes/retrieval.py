@@ -15,7 +15,6 @@ def set_retriever(retriever) -> None:
 
 
 async def retrieval(state: RAGState) -> dict:
-    query = state.rewritten_query or state.original_query
     all_results = []
 
     # Run all sub-query retrievals in parallel

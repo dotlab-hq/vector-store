@@ -1,4 +1,5 @@
 """Repository layer for vector_stores and vector_store_files tables."""
+
 from __future__ import annotations
 
 import json
@@ -18,6 +19,7 @@ from src.database.models import (
 def _utcnow() -> datetime:
     """Return a timezone-naive UTC datetime — matches SQLAlchemy's func.now()."""
     import datetime as _dt
+
     return _dt.datetime.utcnow()
 
 
@@ -236,16 +238,16 @@ class VectorStoreFileRepository:
     async def delete_by_document_id(self, document_id: str) -> int:
         """Delete all vector-store file rows for a document."""
         result = await self.session.execute(
-            delete(VectorStoreFileModel)
-            .where(VectorStoreFileModel.source_document_id == document_id)
+            delete(VectorStoreFileModel).where(
+                VectorStoreFileModel.source_document_id == document_id
+            )
         )
         return int(result.rowcount or 0)
 
     async def delete_by_file_id(self, file_id: str) -> bool:
         """Delete a single vector-store file row by its ID."""
         result = await self.session.execute(
-            delete(VectorStoreFileModel)
-            .where(VectorStoreFileModel.id == file_id)
+            delete(VectorStoreFileModel).where(VectorStoreFileModel.id == file_id)
         )
         return (result.rowcount or 0) > 0
 
@@ -358,9 +360,7 @@ class VectorStoreFileRepository:
             failure_reason=None,
         )
 
-    async def complete_pending_for_document(
-        self, document_id: str
-    ) -> list[str]:
+    async def complete_pending_for_document(self, document_id: str) -> list[str]:
         """Mark all non-terminal VF rows for a document as completed.
 
         Returns the list of affected vector_store_ids so callers can
@@ -369,7 +369,9 @@ class VectorStoreFileRepository:
         result = await self.session.execute(
             select(VectorStoreFileModel.vector_store_id).where(
                 VectorStoreFileModel.source_document_id == document_id,
-                VectorStoreFileModel.status.notin_(["completed", "cancelled", "failed"]),
+                VectorStoreFileModel.status.notin_(
+                    ["completed", "cancelled", "failed"]
+                ),
             )
         )
         affected_store_ids = list({row[0] for row in result.fetchall()})
@@ -378,7 +380,9 @@ class VectorStoreFileRepository:
             update(VectorStoreFileModel)
             .where(
                 VectorStoreFileModel.source_document_id == document_id,
-                VectorStoreFileModel.status.notin_(["completed", "cancelled", "failed"]),
+                VectorStoreFileModel.status.notin_(
+                    ["completed", "cancelled", "failed"]
+                ),
             )
             .values(
                 status="completed",
@@ -411,9 +415,7 @@ class VectorStoreFileRepository:
         )
         await self.session.flush()
 
-    async def sweep_failed_for_retry(
-        self, *, max_retries: int = 5
-    ) -> int:
+    async def sweep_failed_for_retry(self, *, max_retries: int = 5) -> int:
         """Re-promote eligible failed rows back to pending.
 
         Returns number of rows promoted.
@@ -436,7 +438,6 @@ class VectorStoreFileRepository:
         await self.session.flush()
         return int(result.rowcount or 0)
 
-
     async def release_stale_processing(
         self, *, stale_minutes: int = 10, max_retries: int = 5
     ) -> int:
@@ -450,7 +451,9 @@ class VectorStoreFileRepository:
         result = await self.session.execute(
             update(VectorStoreFileModel)
             .where(
-                VectorStoreFileModel.status.in_(["processing", "chunking", "embedding", "indexing"]),
+                VectorStoreFileModel.status.in_(
+                    ["processing", "chunking", "embedding", "indexing"]
+                ),
                 VectorStoreFileModel.locked_at.is_not(None),
                 VectorStoreFileModel.locked_at < cutoff,
                 VectorStoreFileModel.attempts < max_retries,
@@ -520,10 +523,12 @@ class VectorStoreFileRepository:
 
     async def get_documents_by_store(self, store_id: str) -> dict[str, DocumentModel]:
         result = await self.session.execute(
-            select(DocumentModel).join(
+            select(DocumentModel)
+            .join(
                 VectorStoreFileModel,
                 VectorStoreFileModel.source_document_id == DocumentModel.id,
-            ).where(VectorStoreFileModel.vector_store_id == store_id)
+            )
+            .where(VectorStoreFileModel.vector_store_id == store_id)
         )
         return {doc.id: doc for doc in result.scalars().all()}
 
@@ -532,7 +537,9 @@ class VectorStoreFileBatchRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def create(self, batch: VectorStoreFileBatchModel) -> VectorStoreFileBatchModel:
+    async def create(
+        self, batch: VectorStoreFileBatchModel
+    ) -> VectorStoreFileBatchModel:
         self.session.add(batch)
         await self.session.flush()
         return batch
@@ -566,17 +573,25 @@ class VectorStoreFileBatchRepository:
             after_file = await self.session.get(VectorStoreFileModel, after_id)
             if after_file:
                 if order == "asc":
-                    stmt = stmt.where(VectorStoreFileModel.created_at > after_file.created_at)
+                    stmt = stmt.where(
+                        VectorStoreFileModel.created_at > after_file.created_at
+                    )
                 else:
-                    stmt = stmt.where(VectorStoreFileModel.created_at < after_file.created_at)
+                    stmt = stmt.where(
+                        VectorStoreFileModel.created_at < after_file.created_at
+                    )
 
         if before_id:
             before_file = await self.session.get(VectorStoreFileModel, before_id)
             if before_file:
                 if order == "asc":
-                    stmt = stmt.where(VectorStoreFileModel.created_at < before_file.created_at)
+                    stmt = stmt.where(
+                        VectorStoreFileModel.created_at < before_file.created_at
+                    )
                 else:
-                    stmt = stmt.where(VectorStoreFileModel.created_at > before_file.created_at)
+                    stmt = stmt.where(
+                        VectorStoreFileModel.created_at > before_file.created_at
+                    )
 
         stmt = stmt.limit(limit + 1)
         result = await self.session.execute(stmt)

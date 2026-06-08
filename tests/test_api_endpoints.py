@@ -179,7 +179,9 @@ class _FakeDocumentRepository:
             title="alpha.pdf",
             created_at=_now(),
             bytes=123,
-            metadata_json=json.dumps({"purpose": "assistants", "processing_status": "uploaded"}),
+            metadata_json=json.dumps(
+                {"purpose": "assistants", "processing_status": "uploaded"}
+            ),
             s3_key="files/alpha.pdf",
             content_text="hello world",
         )
@@ -205,13 +207,29 @@ class _FakeDocumentRepository:
         return 1
 
     async def get_chunks_by_document(self, document_id: str):
-        return [_ChunkRow(id="chunk-1", document_id=document_id, content="chunk body", position=0)]
+        return [
+            _ChunkRow(
+                id="chunk-1", document_id=document_id, content="chunk body", position=0
+            )
+        ]
 
     async def get_chunks_by_ids(self, chunk_ids):
-        return [_ChunkRow(id=cid, document_id="doc-1", content="chunk text", position=0) for cid in chunk_ids]
+        return [
+            _ChunkRow(id=cid, document_id="doc-1", content="chunk text", position=0)
+            for cid in chunk_ids
+        ]
 
-    async def get_chunks_by_vector_store_file(self, vector_store_id: str, document_id: str):
-        return [_ChunkRow(id="chunk-1", document_id=document_id, content="vector store content", position=0)]
+    async def get_chunks_by_vector_store_file(
+        self, vector_store_id: str, document_id: str
+    ):
+        return [
+            _ChunkRow(
+                id="chunk-1",
+                document_id=document_id,
+                content="vector store content",
+                position=0,
+            )
+        ]
 
     async def get_documents_by_ids(self, document_ids):
         return {
@@ -290,7 +308,12 @@ class _FakeVectorStoreService:
         return self.store
 
     async def list_stores(self, **kwargs):
-        return ListVectorStoresResponse(data=[self.store], has_more=False, first_id=self.store.id, last_id=self.store.id)
+        return ListVectorStoresResponse(
+            data=[self.store],
+            has_more=False,
+            first_id=self.store.id,
+            last_id=self.store.id,
+        )
 
     async def get_store(self, store_id: str):
         return self.store if store_id == self.store.id else None
@@ -299,48 +322,86 @@ class _FakeVectorStoreService:
         return self.store if store_id == self.store.id else None
 
     async def delete_store(self, store_id: str):
-        return DeleteResponse(id=store_id, object="vector_store.deleted", deleted=True) if store_id == self.store.id else None
+        return (
+            DeleteResponse(id=store_id, object="vector_store.deleted", deleted=True)
+            if store_id == self.store.id
+            else None
+        )
 
     async def attach_file(self, store_id: str, request):
         return self.file if store_id == self.store.id else None
 
     async def list_files(self, store_id: str, **kwargs):
         if store_id != self.store.id:
-            return ListVectorStoreFilesResponse(object="list", data=[], has_more=False, first_id=None, last_id=None)
-        return ListVectorStoreFilesResponse(object="list", data=[self.file], has_more=False, first_id=self.file.id, last_id=self.file.id)
+            return ListVectorStoreFilesResponse(
+                object="list", data=[], has_more=False, first_id=None, last_id=None
+            )
+        return ListVectorStoreFilesResponse(
+            object="list",
+            data=[self.file],
+            has_more=False,
+            first_id=self.file.id,
+            last_id=self.file.id,
+        )
 
     async def get_file(self, store_id: str, file_id: str):
-        return self.file if store_id == self.store.id and file_id == self.file.id else None
+        return (
+            self.file if store_id == self.store.id and file_id == self.file.id else None
+        )
 
     async def update_file_attributes(self, store_id: str, file_id: str, request):
-        return self.file if store_id == self.store.id and file_id == self.file.id else None
+        return (
+            self.file if store_id == self.store.id and file_id == self.file.id else None
+        )
 
     async def delete_file(self, store_id: str, file_id: str):
-        return DeleteResponse(id=file_id, object="vector_store.file.deleted", deleted=True) if store_id == self.store.id and file_id == self.file.id else None
+        return (
+            DeleteResponse(id=file_id, object="vector_store.file.deleted", deleted=True)
+            if store_id == self.store.id and file_id == self.file.id
+            else None
+        )
 
     async def get_file_content(self, store_id: str, file_id: str):
-        return FileContentResponse(
-            data=[FileContentItem(type="text", text="chunk body")],
-            has_more=False,
-            next_page=None,
-            file_id=file_id,
-            filename="alpha.pdf",
-            attributes={},
-        ) if store_id == self.store.id and file_id == self.file.id else None
+        return (
+            FileContentResponse(
+                data=[FileContentItem(type="text", text="chunk body")],
+                has_more=False,
+                next_page=None,
+                file_id=file_id,
+                filename="alpha.pdf",
+                attributes={},
+            )
+            if store_id == self.store.id and file_id == self.file.id
+            else None
+        )
 
     async def create_batch(self, store_id: str, request):
         return self.batch if store_id == self.store.id else None
 
     async def get_batch(self, store_id: str, batch_id: str):
-        return self.batch if store_id == self.store.id and batch_id == self.batch.id else None
+        return (
+            self.batch
+            if store_id == self.store.id and batch_id == self.batch.id
+            else None
+        )
 
     async def list_batch_files(self, store_id: str, batch_id: str, **kwargs):
         if store_id != self.store.id or batch_id != self.batch.id:
             return None
-        return ListVectorStoreFilesResponse(object="list", data=[self.file], has_more=False, first_id=self.file.id, last_id=self.file.id)
+        return ListVectorStoreFilesResponse(
+            object="list",
+            data=[self.file],
+            has_more=False,
+            first_id=self.file.id,
+            last_id=self.file.id,
+        )
 
     async def cancel_batch(self, store_id: str, batch_id: str):
-        return self.batch if store_id == self.store.id and batch_id == self.batch.id else None
+        return (
+            self.batch
+            if store_id == self.store.id and batch_id == self.batch.id
+            else None
+        )
 
     async def search(self, store_id: str, request):
         if store_id != self.store.id:
@@ -357,7 +418,9 @@ class _FakeVectorStoreService:
             ],
             has_more=False,
             next_page=None,
-            search_query=[request.query] if isinstance(request.query, str) else request.query,
+            search_query=[request.query]
+            if isinstance(request.query, str)
+            else request.query,
         )
 
 
@@ -391,33 +454,68 @@ class ApiEndpointTests(unittest.TestCase):
         fake_service = _FakeVectorStoreService()
 
         self.stack.enter_context(patch.object(api_main, "engine", fake_engine))
-        self.stack.enter_context(patch.object(api_main, "init_dependencies", lambda: None))
-        self.stack.enter_context(patch.object(api_main, "init_vector_store_scheduler", lambda: None))
-        self.stack.enter_context(patch.object(api_main, "get_workflow", lambda: fake_workflow))
-        self.stack.enter_context(patch.object(api_main, "get_scheduler", lambda: fake_scheduler))
+        self.stack.enter_context(
+            patch.object(api_main, "init_dependencies", lambda: None)
+        )
+        self.stack.enter_context(
+            patch.object(api_main, "init_vector_store_scheduler", lambda: None)
+        )
+        self.stack.enter_context(
+            patch.object(api_main, "get_workflow", lambda: fake_workflow)
+        )
+        self.stack.enter_context(
+            patch.object(api_main, "get_scheduler", lambda: fake_scheduler)
+        )
 
-        self.stack.enter_context(patch.object(files_route, "DocumentRepository", _FakeDocumentRepository))
-        self.stack.enter_context(patch.object(files_route, "S3Client", lambda: _FakeS3()))
-        self.stack.enter_context(patch.object(files_route, "IngestionPipeline", _FakeIngestionPipeline))
-        self.stack.enter_context(patch.object(files_route, "async_session_factory", _fake_session_factory))
+        self.stack.enter_context(
+            patch.object(files_route, "DocumentRepository", _FakeDocumentRepository)
+        )
+        self.stack.enter_context(
+            patch.object(files_route, "S3Client", lambda: _FakeS3())
+        )
+        self.stack.enter_context(
+            patch.object(files_route, "IngestionPipeline", _FakeIngestionPipeline)
+        )
+        self.stack.enter_context(
+            patch.object(files_route, "async_session_factory", _fake_session_factory)
+        )
 
-        self.stack.enter_context(patch.object(ingestion_route, "IngestionPipeline", _FakeIngestionPipeline))
-        self.stack.enter_context(patch.object(ingestion_route, "DocumentRepository", _FakeDocumentRepository))
-        self.stack.enter_context(patch.object(ingestion_route, "async_session_factory", _fake_session_factory))
+        self.stack.enter_context(
+            patch.object(ingestion_route, "IngestionPipeline", _FakeIngestionPipeline)
+        )
+        self.stack.enter_context(
+            patch.object(ingestion_route, "DocumentRepository", _FakeDocumentRepository)
+        )
+        self.stack.enter_context(
+            patch.object(
+                ingestion_route, "async_session_factory", _fake_session_factory
+            )
+        )
 
-        self.stack.enter_context(patch.object(query_route, "get_workflow", lambda: fake_workflow))
+        self.stack.enter_context(
+            patch.object(query_route, "get_workflow", lambda: fake_workflow)
+        )
+
         async def fake_build_document_info(reranked):
             return {}, {}
 
-        self.stack.enter_context(patch.object(query_route, "_build_document_info", fake_build_document_info))
-        self.stack.enter_context(patch.object(query_route, "DocumentRepository", _FakeDocumentRepository))
-        self.stack.enter_context(patch.object(query_route, "async_session_factory", _fake_session_factory))
+        self.stack.enter_context(
+            patch.object(query_route, "_build_document_info", fake_build_document_info)
+        )
+        self.stack.enter_context(
+            patch.object(query_route, "DocumentRepository", _FakeDocumentRepository)
+        )
+        self.stack.enter_context(
+            patch.object(query_route, "async_session_factory", _fake_session_factory)
+        )
 
         @asynccontextmanager
         async def fake_service_in_session():
             yield fake_service
 
-        self.stack.enter_context(patch.object(vs_route, "_service_in_session", fake_service_in_session))
+        self.stack.enter_context(
+            patch.object(vs_route, "_service_in_session", fake_service_in_session)
+        )
 
         self.client = TestClient(api_main.app, raise_server_exceptions=False)
         self.addCleanup(self.client.close)
@@ -452,7 +550,9 @@ class ApiEndpointTests(unittest.TestCase):
 
         deleted = self.client.delete("/files/file-1")
         self.assertEqual(deleted.status_code, 200)
-        self.assertEqual(deleted.json(), {"id": "file-1", "deleted": True, "object": "file"})
+        self.assertEqual(
+            deleted.json(), {"id": "file-1", "deleted": True, "object": "file"}
+        )
 
     def test_ingestion_routes(self):
         text = self.client.post("/ingest/text", data={"text": "hello", "title": "Doc"})
@@ -496,10 +596,14 @@ class ApiEndpointTests(unittest.TestCase):
         got = self.client.get(f"/vector_stores/{store_id}")
         self.assertEqual(got.status_code, 200)
 
-        modified = self.client.post(f"/vector_stores/{store_id}", json={"name": "renamed"})
+        modified = self.client.post(
+            f"/vector_stores/{store_id}", json={"name": "renamed"}
+        )
         self.assertEqual(modified.status_code, 200)
 
-        attached = self.client.post(f"/vector_stores/{store_id}/files", json={"file_id": "doc-1"})
+        attached = self.client.post(
+            f"/vector_stores/{store_id}/files", json={"file_id": "doc-1"}
+        )
         self.assertEqual(attached.status_code, 200)
 
         files = self.client.get(f"/vector_stores/{store_id}/files")
@@ -509,25 +613,35 @@ class ApiEndpointTests(unittest.TestCase):
         file = self.client.get(f"/vector_stores/{store_id}/files/file-1")
         self.assertEqual(file.status_code, 200)
 
-        updated = self.client.post(f"/vector_stores/{store_id}/files/file-1", json={"attributes": {"a": 1}})
+        updated = self.client.post(
+            f"/vector_stores/{store_id}/files/file-1", json={"attributes": {"a": 1}}
+        )
         self.assertEqual(updated.status_code, 200)
 
         content = self.client.get(f"/vector_stores/{store_id}/files/file-1/content")
         self.assertEqual(content.status_code, 200)
 
-        batch = self.client.post(f"/vector_stores/{store_id}/file_batches", json={"file_ids": ["doc-1"]})
+        batch = self.client.post(
+            f"/vector_stores/{store_id}/file_batches", json={"file_ids": ["doc-1"]}
+        )
         self.assertEqual(batch.status_code, 200)
 
         batch_get = self.client.get(f"/vector_stores/{store_id}/file_batches/vsfb-1")
         self.assertEqual(batch_get.status_code, 200)
 
-        batch_files = self.client.get(f"/vector_stores/{store_id}/file_batches/vsfb-1/files")
+        batch_files = self.client.get(
+            f"/vector_stores/{store_id}/file_batches/vsfb-1/files"
+        )
         self.assertEqual(batch_files.status_code, 200)
 
-        batch_cancel = self.client.post(f"/vector_stores/{store_id}/file_batches/vsfb-1/cancel")
+        batch_cancel = self.client.post(
+            f"/vector_stores/{store_id}/file_batches/vsfb-1/cancel"
+        )
         self.assertEqual(batch_cancel.status_code, 200)
 
-        search = self.client.post(f"/vector_stores/{store_id}/search", json={"query": "hello"})
+        search = self.client.post(
+            f"/vector_stores/{store_id}/search", json={"query": "hello"}
+        )
         self.assertEqual(search.status_code, 200)
         self.assertEqual(search.json()["data"][0]["filename"], "alpha.pdf")
 

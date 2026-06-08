@@ -20,7 +20,9 @@ class FaissVectorStore(VectorStore):
         self.chunk_ids: list[str] = []
         self._metadata: dict[str, Chunk] = {}
         self._embeddings: list[list[float]] = []  # stored for delete+rebuild
-        self._store_to_positions: dict[str, set[int]] = {}  # vector_store_id → FAISS positions
+        self._store_to_positions: dict[
+            str, set[int]
+        ] = {}  # vector_store_id → FAISS positions
 
     def _ensure_dimension(self, vectors: np.ndarray) -> None:
         """Rebuild the index if the vector dimension doesn't match."""
@@ -76,7 +78,9 @@ class FaissVectorStore(VectorStore):
                 )
         return results
 
-    async def insert(self, chunks: Sequence[Chunk], embeddings: Sequence[list[float]]) -> None:
+    async def insert(
+        self, chunks: Sequence[Chunk], embeddings: Sequence[list[float]]
+    ) -> None:
         if not chunks or not embeddings:
             return
 

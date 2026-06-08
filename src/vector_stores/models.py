@@ -1,4 +1,5 @@
 """Domain types and enums for vector stores."""
+
 from __future__ import annotations
 
 from enum import StrEnum

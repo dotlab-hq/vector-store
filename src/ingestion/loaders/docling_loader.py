@@ -18,13 +18,29 @@ logger = structlog.get_logger()
 
 DOCLING_EXTENSIONS = {
     # Documents
-    ".pdf", ".docx", ".doc", ".odt", ".pptx", ".ppt", ".odp",
+    ".pdf",
+    ".docx",
+    ".doc",
+    ".odt",
+    ".pptx",
+    ".ppt",
+    ".odp",
     # Spreadsheets
-    ".xlsx", ".xls", ".ods", ".csv", ".tsv",
+    ".xlsx",
+    ".xls",
+    ".ods",
+    ".csv",
+    ".tsv",
     # Web
-    ".html", ".htm",
+    ".html",
+    ".htm",
     # Text / Structured
-    ".txt", ".md", ".json", ".xml", ".yaml", ".yml",
+    ".txt",
+    ".md",
+    ".json",
+    ".xml",
+    ".yaml",
+    ".yml",
     # E-books
     ".epub",
 }
@@ -49,12 +65,12 @@ class DoclingLoader(DocumentLoader):
             return
         try:
             import langchain_docling  # noqa: F401
+
             self._initialized = True
         except ImportError:
             logger.error("langchain_docling_not_installed")
             raise ImportError(
-                "Install docling extras: "
-                "`uv add langchain-docling docling`"
+                "Install docling extras: `uv add langchain-docling docling`"
             )
 
     def can_load(self, file_path: Path) -> bool:
@@ -123,6 +139,10 @@ class DoclingLoader(DocumentLoader):
             content = ""
         return RawDocument(
             content=content,
-            metadata={"title": file_path.stem, "extension": file_path.suffix.lower(), "converter": "fallback_text"},
+            metadata={
+                "title": file_path.stem,
+                "extension": file_path.suffix.lower(),
+                "converter": "fallback_text",
+            },
             source_path=str(file_path),
         )

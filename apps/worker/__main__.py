@@ -2,6 +2,7 @@
 
 Run as: ``python -m apps.worker``.
 """
+
 import asyncio
 import signal
 from typing import Any

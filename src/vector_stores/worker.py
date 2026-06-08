@@ -4,6 +4,7 @@ Runs as an asyncio task in the FastAPI lifespan (in-process) or as a standalone
 entrypoint (``python -m apps.worker``). Uses PostgreSQL ``SELECT ... FOR UPDATE
 SKIP LOCKED`` to safely claim files across multiple workers.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -119,7 +120,8 @@ class VectorStoreWorker:
                         await vf_repo.mark_failed(
                             vf.id,
                             failure_reason="missing_vector_store_or_document",
-                            next_attempt_at=_utcnow() + timedelta(seconds=_backoff(vf.attempts)),
+                            next_attempt_at=_utcnow()
+                            + timedelta(seconds=_backoff(vf.attempts)),
                         )
                         await session.commit()
                         processed += 1
@@ -159,6 +161,7 @@ class VectorStoreWorker:
             doc_status = "uploaded"
             try:
                 import json
+
                 meta = json.loads(getattr(doc, "metadata_json", None) or "{}")
                 doc_status = meta.get("processing_status", "uploaded")
             except Exception:
@@ -176,6 +179,7 @@ class VectorStoreWorker:
                     # can re-claim later.  Don't burn a retry attempt.
                     from sqlalchemy import update as sa_update
                     from src.database.models import VectorStoreFileModel as VF
+
                     await session.execute(
                         sa_update(VF)
                         .where(VF.id == vf.id, VF.status == "processing")
