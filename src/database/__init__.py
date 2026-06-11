@@ -7,6 +7,7 @@ from .models import (
     VectorStoreModel,
 )
 from .session import async_session_factory, engine
+from .migrate import run_schema_migrations
 
 __all__ = [
     "Base",
@@ -17,4 +18,5 @@ __all__ = [
     "VectorStoreModel",
     "async_session_factory",
     "engine",
+    "run_schema_migrations",
 ]

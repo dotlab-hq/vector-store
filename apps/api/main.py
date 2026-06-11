@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -13,7 +14,7 @@ from apps.api.dependencies import (
 )
 from apps.api.middleware import AuthMiddleware
 from apps.api.routes import documents, files, ingestion, query, vector_stores
-from src.database import Base, engine
+from src.database import Base, engine, run_schema_migrations
 from src.observability.logging import get_logger, setup_logging
 
 from src.config import settings
@@ -22,6 +23,67 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 setup_logging()
 logger = get_logger()
+
+# In-process arq worker — set during lifespan
+_arq_worker_task = None
+_arq_worker_instance = None
+
+
+async def _start_inprocess_worker() -> None:
+    """Start an arq Worker inside the API process so tasks are consumed
+    without requiring a separate ``python -m apps.worker`` process."""
+    global _arq_worker_task, _arq_worker_instance
+
+    if not settings.redis_url:
+        logger.warning("worker_skipped", reason="REDIS_URL not set")
+        return
+
+    from arq import Worker
+    from apps.worker.arq_settings import WorkerSettings
+    from src.shared.events import get_redis_settings
+
+    try:
+        redis_settings = get_redis_settings()
+    except Exception as exc:
+        logger.warning("worker_redis_connect_failed", error=str(exc))
+        return
+
+    _arq_worker_instance = Worker(
+        WorkerSettings.functions,
+        redis_settings=redis_settings,
+        queue_name=WorkerSettings.queue_name,
+        max_jobs=WorkerSettings.max_jobs,
+        poll_delay=WorkerSettings.poll_delay,
+        max_tries=WorkerSettings.max_tries,
+        health_check_interval=WorkerSettings.health_check_interval,
+    )
+    _arq_worker_task = asyncio.create_task(
+        _arq_worker_instance.main(), name="inprocess-arq-worker"
+    )
+    logger.info(
+        "inprocess_worker_started",
+        max_jobs=WorkerSettings.max_jobs,
+        queue=WorkerSettings.queue_name,
+    )
+
+
+async def _stop_inprocess_worker() -> None:
+    """Gracefully shut down the in-process arq worker."""
+    global _arq_worker_task, _arq_worker_instance
+    if _arq_worker_instance is not None:
+        try:
+            await _arq_worker_instance.close()
+        except Exception:
+            pass
+        _arq_worker_instance = None
+    if _arq_worker_task is not None:
+        _arq_worker_task.cancel()
+        try:
+            await _arq_worker_task
+        except asyncio.CancelledError:
+            pass
+        _arq_worker_task = None
+    logger.info("inprocess_worker_stopped")
 
 
 @asynccontextmanager
@@ -34,6 +96,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        await run_schema_migrations()
         logger.info("database_connected")
     except Exception as e:
         logger.warning("database_connection_failed", error=str(e))
@@ -45,7 +108,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await check_service_health()
     except Exception as e:
         logger.warning("dependency_init_failed", error=str(e))
+
+    # Start the in-process arq worker so tasks are consumed
+    await _start_inprocess_worker()
+
     yield
+
+    # Shutdown: stop worker, close Redis pool
+    await _stop_inprocess_worker()
+    await close_redis_pool()
 
 
 app = FastAPI(title="Agentic RAG", version="0.1.0", lifespan=lifespan)
