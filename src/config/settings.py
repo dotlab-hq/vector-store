@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     child_chunk_max_tokens: int = 256
 
     # Retrieval
+    retriever_type: str = "local"  # "local" (HybridRetriever) | "kg" (KGRetriever)
     retrieval_top_k: int = 20
     rerank_top_k: int = 10
     fusion_k: int = 60  # RRF constant
@@ -110,6 +111,24 @@ class Settings(BaseSettings):
     task_worker_retry_cap_s: int = 3600
     task_worker_retry_max: int = 5
     task_worker_enabled: bool = True
+
+    # Vision / PDF diagram extraction
+    openai_vision_model: str = "gpt-4o"
+    vision_max_tokens: int = 4096
+    pdf_extract_diagrams: bool = True
+    pdf_diagram_render_dpi: int = 200
+    pdf_diagram_render_matrix: float = 2.0
+    pdf_diagram_min_region_ratio: float = 0.05
+    pdf_diagram_max_regions_per_page: int = 5
+    pdf_diagram_image_min_bytes: int = 2_000
+    pdf_diagram_prompt: str = (
+        "Describe this diagram in detail. Extract all visual elements, labels, "
+        "and data. Use markdown formatting for clarity."
+    )
+    pdf_vision_page_prompt: str = (
+        "Describe the content of this PDF page in detail. Extract text, "
+        "describe diagrams, tables, and visual elements. Use markdown."
+    )
 
 
 settings = Settings()

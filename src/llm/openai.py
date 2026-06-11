@@ -16,3 +16,11 @@ llm = ChatOpenAI(
     api_key=settings.openai_api_key,
     base_url=base_url,
 )
+
+vision_llm = ChatOpenAI(
+    model=settings.openai_vision_model,
+    temperature=0.3,
+    max_tokens=settings.vision_max_tokens,
+    api_key=settings.openai_api_key,
+    base_url=base_url,
+)

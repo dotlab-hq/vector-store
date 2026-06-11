@@ -1,5 +1,6 @@
 from langchain_openai import OpenAIEmbeddings
 
+from src.config import settings
 from src.graph.nodes.retrieval import set_retriever
 from src.graph.nodes.reranking import set_reranker
 from src.graph.workflows import build_rag_workflow
@@ -7,7 +8,7 @@ from src.indexing.bm25.bm25_store import Bm25Store
 from src.indexing.embeddings import embeddings
 from src.indexing.qdrant.qdrant_store import QdrantVectorStore
 from src.observability.logging import get_logger
-from src.retrieval.hybrid.hybrid_retriever import HybridRetriever
+from src.retrieval.factory import create_retriever
 
 logger = get_logger()
 
@@ -26,9 +27,9 @@ def init_dependencies() -> None:
     bm25_store = Bm25Store()
     embedder = embeddings
 
-    hybrid_retriever = HybridRetriever(qdrant_store, bm25_store, embedder)
-
-    set_retriever(hybrid_retriever)
+    # Use the factory to create the retriever — respects RETRIEVER_TYPE config
+    retriever = create_retriever()
+    set_retriever(retriever)
 
     # Prefer remote HF reranker (no local GPU/RAM needed); fall back to local
     try:
@@ -50,7 +51,6 @@ def init_dependencies() -> None:
 
 async def check_service_health() -> None:
     """Log availability of all external services. Called once at startup."""
-    from src.config import settings
 
     qdrant_ok = False
     if qdrant_store is not None:
@@ -76,6 +76,7 @@ async def check_service_health() -> None:
         neo4j=neo4j_ok,
         neo4j_enabled=settings.neo4j_enabled,
         s3=settings.s3_access_key != "",
+        retriever_type=settings.retriever_type,
     )
 
 
