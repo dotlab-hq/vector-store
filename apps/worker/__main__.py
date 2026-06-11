@@ -144,8 +144,8 @@ async def main() -> None:
         _heartbeat_loop(worker_id), name="worker-heartbeat"
     )
 
-    # arq Worker.run() blocks until cancelled — run it in a task
-    worker_task = asyncio.create_task(worker.run(), name="arq-worker")
+    # arq Worker.main() is the async entrypoint — use it with create_task
+    worker_task = asyncio.create_task(worker.main(), name="arq-worker")
 
     try:
         await stop_event.wait()
