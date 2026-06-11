@@ -3,7 +3,8 @@ import logging
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, select, update
+from sqlalchemy import Text, cast, func, select, update
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import ChunkModel, DocumentModel
@@ -204,8 +205,9 @@ class DocumentRepository:
         recovery note.  Returns the list of document IDs that were released.
         """
         cutoff = datetime.utcnow() - timedelta(minutes=stale_minutes)
+        meta = cast(DocumentModel.metadata_json, JSONB)
         clause = (
-            DocumentModel.metadata_json["processing_status"].as_string() == "processing"
+            meta["processing_status"].as_string() == "processing"
         ) & (DocumentModel.updated_at < cutoff)
 
         # Fetch matching IDs first
@@ -221,11 +223,14 @@ class DocumentRepository:
             update(DocumentModel)
             .where(DocumentModel.id.in_(ids))
             .values(
-                metadata_json=func.jsonb_set(
-                    DocumentModel.metadata_json,
-                    "{processing_status}",
-                    '"error"',
-                    create_if_missing=True,
+                metadata_json=cast(
+                    func.jsonb_set(
+                        meta,
+                        "{processing_status}",
+                        '"error"',
+                        create_if_missing=True,
+                    ),
+                    Text,
                 )
             )
             .execution_options(synchronize_session=False)
