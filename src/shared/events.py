@@ -90,7 +90,7 @@ async def get_active_workers() -> list[str]:
     pool = await get_redis_pool()
     try:
         keys = await pool.keys(f"{WORKER_HEARTBEAT_PREFIX}*")
-        return [k.split(":", 2)[2] for k in keys] if keys else []
+        return [k.decode().split(":", 2)[2] for k in keys] if keys else []
     except Exception:
         logger.exception("heartbeat_scan_failed")
         return []
