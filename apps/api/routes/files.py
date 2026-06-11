@@ -172,6 +172,8 @@ async def upload_file(
             {"document_id": file_id, "s3_key": s3_key, "purpose": purpose},
         )
 
+        async with async_session_factory() as session:
+            repo = DocumentRepository(session)
             row = await repo.get_document_by_id(file_id)
 
         if row is None:

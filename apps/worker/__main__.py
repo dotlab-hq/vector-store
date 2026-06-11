@@ -17,7 +17,6 @@ from typing import Any
 from uuid import uuid4
 
 from arq import Worker
-from arq.worker import WorkerStatus
 
 from src.config import settings
 from src.database import engine
