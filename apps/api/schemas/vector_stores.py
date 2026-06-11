@@ -103,7 +103,8 @@ class VectorStoreObject(BaseModel):
     object: Literal["vector_store"] = "vector_store"
     created_at: int  # epoch seconds
     name: str = ""
-    bytes: int = 0
+    description: str | None = None
+    usage_bytes: int = 0
     status: Literal["expired", "in_progress", "completed"] = "in_progress"
     file_counts: FileCounts = Field(default_factory=FileCounts)
     last_active_at: int = 0
@@ -134,10 +135,10 @@ class VectorStoreFileObject(BaseModel):
         "failed",
     ] = "in_progress"
     last_error: LastError | None = None
-    bytes: int = 0
     usage_bytes: int = 0
     chunking_strategy: ChunkingStrategy | None = None
     attributes: dict[str, Any] = Field(default_factory=dict)
+    filename: str = ""
 
 
 class UpdateVectorStoreFileRequest(BaseModel):
@@ -184,6 +185,7 @@ class ListVectorStoreFilesQuery(BaseModel):
 
 class CreateVectorStoreRequest(BaseModel):
     name: str | None = None
+    description: str | None = None
     file_ids: list[str] = Field(default_factory=list)
     chunking_strategy: ChunkingStrategy | None = None
     expires_after: ExpiresAfter | None = None
@@ -192,6 +194,7 @@ class CreateVectorStoreRequest(BaseModel):
 
 class UpdateVectorStoreRequest(BaseModel):
     name: str | None = None
+    description: str | None = None
     expires_after: ExpiresAfter | None = None
     metadata: dict[str, str] | None = None
 
@@ -239,7 +242,7 @@ class RankingOptions(BaseModel):
 class SearchRequest(BaseModel):
     query: str | list[str] = Field(..., min_length=1)
     filters: CompoundFilter | None = None
-    max_num_results: int = Field(default=10, ge=1, le=100)
+    max_num_results: int = Field(default=10, ge=1, le=50)
     ranking_options: RankingOptions = Field(default_factory=RankingOptions)
     rewrite_query: bool = False
 

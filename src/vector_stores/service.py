@@ -24,6 +24,7 @@ from apps.api.schemas.vector_stores import (
     LastError,
     ListVectorStoreFilesResponse,
     ListVectorStoresResponse,
+    OtherChunkingStrategy,
     PerFileConfig,
     SearchRequest,
     SearchResponse,
@@ -129,13 +130,14 @@ def _to_vector_store_object(
     return VectorStoreObject(
         id=store.id,
         name=store.name or "",
+        description=getattr(store, "description", None),
         status=store.status or "in_progress",
         file_counts=file_counts,
         last_active_at=int(store.last_active_at.timestamp())
         if store.last_active_at
         else 0,
         created_at=int(store.created_at.timestamp()) if store.created_at else 0,
-        bytes=store.usage_bytes or 0,
+        usage_bytes=store.usage_bytes or 0,
         metadata=metadata,
         expires_after=expires_after,
         expires_at=expires_at_unix,
@@ -172,14 +174,14 @@ def _to_vector_store_file_object(
     vf: VectorStoreFileModel,
     store_id: str | None = None,
     chunking_strategy: ChunkingStrategy | None = None,
+    filename: str = "",
 ) -> VectorStoreFileObject:
     if chunking_strategy is None:
-        # Default to auto when not specified
-        chunking_strategy = AutoChunkingStrategy()
+        chunking_strategy = OtherChunkingStrategy()
     attributes: dict = {}
     try:
         attributes = json.loads(vf.attributes_json or "{}")
-    except json.JSONDecodeError, TypeError:
+    except (json.JSONDecodeError, TypeError):
         attributes = {}
 
     last_error: LastError | None = None
@@ -197,10 +199,10 @@ def _to_vector_store_file_object(
         status=oai_status,  # type: ignore[arg-type]
         last_error=last_error,
         created_at=int(vf.created_at.timestamp()) if vf.created_at else 0,
-        bytes=vf.bytes or 0,
         usage_bytes=vf.bytes or 0,
         attributes=attributes,
         chunking_strategy=chunking_strategy,
+        filename=filename,
     )
 
 
@@ -259,6 +261,7 @@ class VectorStoreService:
         store = VectorStoreModel(
             id=_new_vector_store_id(),
             name=request.name or "",
+            description=request.description,
             status="in_progress",
             metadata_json=metadata_json,
             chunking_strategy=strategy_name,
@@ -288,7 +291,7 @@ class VectorStoreService:
             meta = json.loads(doc.metadata_json or "{}")
             if meta.get("processing_status") in ("processed", "completed"):
                 return True
-        except json.JSONDecodeError, TypeError:
+        except (json.JSONDecodeError, TypeError):
             pass
         # Authoritative path: do chunks actually exist?
         chunks = await self.doc_repo.get_chunks_by_document(doc.id)
@@ -319,7 +322,9 @@ class VectorStoreService:
             existing = await self.vf_repo.get_by_store_and_document(store_id, fid)
             if existing is not None:
                 results.append(
-                    _to_vector_store_file_object(existing, store_id, chunking)
+                    _to_vector_store_file_object(
+                        existing, store_id, chunking, filename=doc.title or ""
+                    )
                 )
                 continue
             # If the source document is already fully processed (ingested/chunked),
@@ -346,7 +351,7 @@ class VectorStoreService:
 
                 if qdrant_store is not None:
                     await qdrant_store.update_chunks_vector_store_id(fid, store_id)
-            results.append(_to_vector_store_file_object(vf, store_id, chunking))
+            results.append(_to_vector_store_file_object(vf, store_id, chunking, filename=doc.title or ""))
         # Recompute counts
         await self.vf_repo.update_store_file_counts(store_id)
         return results
@@ -361,9 +366,9 @@ class VectorStoreService:
         return _to_vector_store_object(store, counts)
 
     async def list_stores(
-        self, *, limit: int = 20, after_id: str | None = None
+        self, *, limit: int = 20, after_id: str | None = None, before_id: str | None = None, order: str = "desc",
     ) -> ListVectorStoresResponse:
-        stores = await self.vs_repo.list_all(limit=limit, after_id=after_id)
+        stores = await self.vs_repo.list_all(limit=limit, after_id=after_id, before_id=before_id, order=order)
         has_more = len(stores) > limit
         stores = stores[:limit]
         data = [_to_vector_store_object(s) for s in stores]
@@ -384,6 +389,8 @@ class VectorStoreService:
         updates: dict = {}
         if request.name is not None:
             updates["name"] = request.name
+        if request.description is not None:
+            updates["description"] = request.description
         if request.metadata is not None:
             updates["metadata_json"] = json.dumps(request.metadata)
         if request.expires_after is not None:
@@ -432,7 +439,8 @@ class VectorStoreService:
                 )
                 existing = await self.vf_repo.get(existing.id)
             await self.session.commit()
-            return _to_vector_store_file_object(existing, store_id, chunking)  # type: ignore[arg-type]
+            existing_doc = await self.doc_repo.get_document(request.file_id)
+            return _to_vector_store_file_object(existing, store_id, chunking, filename=existing_doc.title if existing_doc else "")  # type: ignore[arg-type]
 
         doc = await self.doc_repo.get_document(request.file_id)
         if doc is None:
@@ -463,7 +471,7 @@ class VectorStoreService:
         # Bump last_active_at
         await self.vs_repo.update(store_id, last_active_at=_utcnow())
         await self.session.commit()
-        return _to_vector_store_file_object(vf, store_id, chunking)
+        return _to_vector_store_file_object(vf, store_id, chunking, filename=doc.title or "")
 
     async def get_file(
         self, store_id: str, file_id: str
@@ -477,7 +485,8 @@ class VectorStoreService:
             store.chunk_size_tokens if store else None,
             store.chunk_overlap_tokens if store else None,
         )
-        return _to_vector_store_file_object(vf, store_id, chunking)
+        doc = await self.doc_repo.get_document(vf.source_document_id)
+        return _to_vector_store_file_object(vf, store_id, chunking, filename=doc.title if doc else "")
 
     async def list_files(
         self,
@@ -504,7 +513,6 @@ class VectorStoreService:
         internal_status: str | None = None
         if status_filter:
             if status_filter == "in_progress":
-                # Use a SQL IN check via multiple calls — simpler is to query for non-terminal
                 internal_status = None  # we'll filter post-query below
             elif status_filter == "completed":
                 internal_status = "completed"
@@ -529,8 +537,6 @@ class VectorStoreService:
             files = [
                 f for f in files if f.status not in ("completed", "cancelled", "failed")
             ]
-            data = [_to_vector_store_file_object(f, store_id, chunking) for f in files]
-            has_more = has_more_raw or len(data) > limit
         else:
             files = await self.vf_repo.list_by_store(
                 store_id,
@@ -540,9 +546,30 @@ class VectorStoreService:
                 status_filter=internal_status,
                 order=order,
             )
-            has_more = len(files) > limit
+            has_more_raw = len(files) > limit
             files = files[:limit]
-            data = [_to_vector_store_file_object(f, store_id, chunking) for f in files]
+
+        # Bulk-load filenames for this batch
+        doc_ids = {f.source_document_id for f in files}
+        filenames: dict[str, str] = {}
+        if doc_ids:
+            from sqlalchemy import select as sa_select
+            from src.database.models import DocumentModel
+
+            result = await self.session.execute(
+                sa_select(DocumentModel.id, DocumentModel.title).where(
+                    DocumentModel.id.in_(doc_ids)
+                )
+            )
+            filenames = {row[0]: row[1] or "" for row in result.fetchall()}
+
+        data = [
+            _to_vector_store_file_object(
+                f, store_id, chunking, filename=filenames.get(f.source_document_id, "")
+            )
+            for f in files
+        ]
+        has_more = has_more_raw
 
         return ListVectorStoreFilesResponse(
             data=data,
@@ -569,7 +596,8 @@ class VectorStoreService:
             store.chunk_size_tokens if store else None,
             store.chunk_overlap_tokens if store else None,
         )
-        return _to_vector_store_file_object(vf, store_id, chunking)  # type: ignore[arg-type]
+        doc = await self.doc_repo.get_document(vf.source_document_id)  # type: ignore[union-attr]
+        return _to_vector_store_file_object(vf, store_id, chunking, filename=doc.title if doc else "")  # type: ignore[arg-type]
 
     async def get_file_content(
         self,
@@ -588,7 +616,7 @@ class VectorStoreService:
         attributes: dict = {}
         try:
             attributes = json.loads(vf.attributes_json or "{}")
-        except json.JSONDecodeError, TypeError:
+        except (json.JSONDecodeError, TypeError):
             attributes = {}
         # Map to FileContentItem: one item per chunk
         data: list[FileContentItem] = []
@@ -736,8 +764,6 @@ class VectorStoreService:
             files = [
                 f for f in files if f.status not in ("completed", "cancelled", "failed")
             ]
-            data = [_to_vector_store_file_object(f, store_id, chunking) for f in files]
-            has_more = has_more_raw or len(data) > limit
         else:
             internal_status = (
                 status_filter
@@ -752,9 +778,30 @@ class VectorStoreService:
                 status_filter=internal_status,
                 order=order,
             )
-            has_more = len(files) > limit
+            has_more_raw = len(files) > limit
             files = files[:limit]
-            data = [_to_vector_store_file_object(f, store_id, chunking) for f in files]
+
+        # Bulk-load filenames for this batch
+        doc_ids = {f.source_document_id for f in files}
+        filenames: dict[str, str] = {}
+        if doc_ids:
+            from sqlalchemy import select as sa_select
+            from src.database.models import DocumentModel
+
+            result = await self.session.execute(
+                sa_select(DocumentModel.id, DocumentModel.title).where(
+                    DocumentModel.id.in_(doc_ids)
+                )
+            )
+            filenames = {row[0]: row[1] or "" for row in result.fetchall()}
+
+        data = [
+            _to_vector_store_file_object(
+                f, store_id, chunking, filename=filenames.get(f.source_document_id, "")
+            )
+            for f in files
+        ]
+        has_more = has_more_raw
 
         return ListVectorStoreFilesResponse(
             data=data,

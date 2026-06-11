@@ -80,6 +80,7 @@ class VectorStoreModel(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String(256), nullable=False, default="")
+    description: Mapped[str | None] = mapped_column(String(512), nullable=True)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="in_progress"
     )
@@ -154,7 +155,7 @@ class VectorStoreFileBatchModel(Base):
         nullable=False,
         index=True,
     )
-    object: Mapped[str] = mapped_column(String(32), default="vector_store.file_batch")
+    object: Mapped[str] = mapped_column(String(32), default="vector_store.files_batch")
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="in_progress"
     )

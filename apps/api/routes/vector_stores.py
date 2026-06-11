@@ -69,9 +69,13 @@ async def create_vector_store(
 async def list_vector_stores(
     limit: int = Query(20, ge=1, le=100),
     after: str | None = Query(None),
+    before: str | None = Query(None),
+    order: str = Query("desc"),
 ) -> ListVectorStoresResponse:
+    if order not in ("asc", "desc"):
+        raise HTTPException(status_code=400, detail="order must be 'asc' or 'desc'")
     async with _service_in_session() as svc:
-        return await svc.list_stores(limit=limit, after_id=after)
+        return await svc.list_stores(limit=limit, after_id=after, before_id=before, order=order)
 
 
 @router.get("/{vector_store_id}", response_model=VectorStoreObject)

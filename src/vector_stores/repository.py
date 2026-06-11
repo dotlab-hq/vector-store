@@ -42,13 +42,28 @@ class VectorStoreRepository:
         *,
         limit: int = 20,
         after_id: str | None = None,
+        before_id: str | None = None,
+        order: str = "desc",
     ) -> list[VectorStoreModel]:
-        stmt = select(VectorStoreModel).order_by(VectorStoreModel.created_at.desc())
+        sort_col = VectorStoreModel.created_at
+        if order == "asc":
+            stmt = select(VectorStoreModel).order_by(sort_col.asc())
+        else:
+            stmt = select(VectorStoreModel).order_by(sort_col.desc())
         if after_id:
-            # "after" means created before this id
             after_store = await self.get(after_id)
             if after_store:
-                stmt = stmt.where(VectorStoreModel.created_at < after_store.created_at)
+                if order == "asc":
+                    stmt = stmt.where(VectorStoreModel.created_at > after_store.created_at)
+                else:
+                    stmt = stmt.where(VectorStoreModel.created_at < after_store.created_at)
+        if before_id:
+            before_store = await self.get(before_id)
+            if before_store:
+                if order == "asc":
+                    stmt = stmt.where(VectorStoreModel.created_at < before_store.created_at)
+                else:
+                    stmt = stmt.where(VectorStoreModel.created_at > before_store.created_at)
         stmt = stmt.limit(limit + 1)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -58,6 +73,7 @@ class VectorStoreRepository:
         store_id: str,
         *,
         name: str | None = None,
+        description: str | None = None,
         metadata_json: str | None = None,
         expires_at: datetime | None = None,
         expires_after_days: int | None = None,
@@ -67,6 +83,8 @@ class VectorStoreRepository:
         values: dict[str, object] = {}
         if name is not None:
             values["name"] = name
+        if description is not None:
+            values["description"] = description
         if metadata_json is not None:
             values["metadata_json"] = metadata_json
         if expires_at is not None:
@@ -520,6 +538,21 @@ class VectorStoreFileRepository:
         )
         await self.session.flush()
         return counts
+
+    async def get_filenames_by_store(self, store_id: str) -> dict[str, str]:
+        """Return source_document_id → title mapping for all files in a store."""
+        result = await self.session.execute(
+            select(
+                VectorStoreFileModel.source_document_id,
+                DocumentModel.title,
+            )
+            .join(
+                DocumentModel,
+                VectorStoreFileModel.source_document_id == DocumentModel.id,
+            )
+            .where(VectorStoreFileModel.vector_store_id == store_id)
+        )
+        return {row[0]: row[1] for row in result.fetchall()}
 
     async def get_documents_by_store(self, store_id: str) -> dict[str, DocumentModel]:
         result = await self.session.execute(
