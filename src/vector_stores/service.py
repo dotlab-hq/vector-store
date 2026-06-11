@@ -351,6 +351,14 @@ class VectorStoreService:
 
                 if qdrant_store is not None:
                     await qdrant_store.update_chunks_vector_store_id(fid, store_id)
+            else:
+                # Document not ready yet — enqueue arq worker to process later
+                from src.shared.events import enqueue_task
+
+                await enqueue_task(
+                    "vs_file.process",
+                    {"vector_store_file_id": vf.id},
+                )
             results.append(_to_vector_store_file_object(vf, store_id, chunking, filename=doc.title or ""))
         # Recompute counts
         await self.vf_repo.update_store_file_counts(store_id)

@@ -12,6 +12,7 @@ from sqlalchemy import update
 
 from src.config import settings
 from src.database.models import VectorStoreModel
+from src.database.repositories import DocumentRepository
 from src.database.session import async_session_factory
 from src.observability.logging import get_logger
 from src.vector_stores.repository import VectorStoreFileRepository
@@ -80,6 +81,14 @@ class VectorStoreCron:
             )
             if released_tasks:
                 logger.info("vs_cron_released_orphaned_tasks", count=released_tasks)
+
+            # 0c. Recover documents stuck in "processing" status from worker crashes
+            doc_repo = DocumentRepository(session)
+            released_docs = await doc_repo.release_stale_documents(
+                stale_minutes=settings.task_worker_lease_minutes
+            )
+            if released_docs:
+                logger.info("vs_cron_released_stale_documents", count=len(released_docs))
 
             # 1. Re-promote eligible failed rows back to pending
             promoted = await vf_repo.sweep_failed_for_retry(max_retries=max_retries)

@@ -1,11 +1,15 @@
 import json
+import logging
 from collections.abc import Sequence
+from datetime import datetime, timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import ChunkModel, DocumentModel
 from src.shared.types import Chunk, Document
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentRepository:
@@ -190,3 +194,47 @@ class DocumentRepository:
             ChunkModel.__table__.delete().where(ChunkModel.document_id == document_id)
         )
         return int(result.rowcount or 0)
+
+    async def release_stale_documents(
+        self, stale_minutes: int = 15
+    ) -> list[str]:
+        """Find documents stuck in ``processing`` status longer than *stale_minutes*.
+
+        Resets their ``metadata_json.processing_status`` to ``"error"`` with a
+        recovery note.  Returns the list of document IDs that were released.
+        """
+        cutoff = datetime.utcnow() - timedelta(minutes=stale_minutes)
+        clause = (
+            DocumentModel.metadata_json["processing_status"].as_string() == "processing"
+        ) & (DocumentModel.updated_at < cutoff)
+
+        # Fetch matching IDs first
+        result = await self.session.execute(
+            select(DocumentModel.id).where(clause)
+        )
+        ids = [row[0] for row in result.all()]
+        if not ids:
+            return []
+
+        # Derive the updated metadata_json
+        stmt = (
+            update(DocumentModel)
+            .where(DocumentModel.id.in_(ids))
+            .values(
+                metadata_json=func.jsonb_set(
+                    DocumentModel.metadata_json,
+                    "{processing_status}",
+                    '"error"',
+                    create_if_missing=True,
+                )
+            )
+            .execution_options(synchronize_session=False)
+        )
+        await self.session.execute(stmt)
+        await self.session.commit()
+        logger.info(
+            "released_stale_documents",
+            count=len(ids),
+            stale_minutes=stale_minutes,
+        )
+        return ids

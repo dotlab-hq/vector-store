@@ -1,7 +1,7 @@
 """OpenAI-compatible file endpoints backed by the local app stack.
 
 File uploads create a DB record + a processing task row. Heavy work
-(parse, chunk, embed, index) is deferred to the background worker.
+(parse, chunk, embed, index) is deferred to the background worker via arq.
 """
 
 from __future__ import annotations
@@ -22,9 +22,10 @@ from fastapi import (
 from fastapi.responses import Response
 
 from apps.api.schemas.files import FileDeletedResponse, FileListResponse, FileObject
-from src.database.repositories import DocumentRepository, ProcessingTaskRepository
+from src.database.repositories import DocumentRepository
 from src.database.session import async_session_factory
 from src.observability.logging import get_logger
+from src.shared.events import enqueue_task
 from src.shared.types import Document
 
 router = APIRouter(prefix="/files", tags=["files"])
@@ -143,7 +144,6 @@ async def upload_file(
 
         async with async_session_factory() as session:
             repo = DocumentRepository(session)
-            task_repo = ProcessingTaskRepository(session)
 
             document = Document(
                 id=file_id,
@@ -164,12 +164,13 @@ async def upload_file(
                 s3_key=s3_key,
                 bytes=len(file_bytes),
             )
-
-            await task_repo.create(
-                task_type="document.ingest",
-                payload={"document_id": file_id, "s3_key": s3_key, "purpose": purpose},
-            )
             await session.commit()
+
+        # Enqueue background processing via arq
+        await enqueue_task(
+            "document.ingest",
+            {"document_id": file_id, "s3_key": s3_key, "purpose": purpose},
+        )
 
             row = await repo.get_document_by_id(file_id)
 

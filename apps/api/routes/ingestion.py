@@ -1,7 +1,7 @@
-"""Ingestion endpoints — lightweight: create DB record + task row, return 202.
+"""Ingestion endpoints — lightweight: create DB record + enqueue task, return 202.
 
 Heavy processing (parse, chunk, embed, index) is deferred to the background
-worker via the processing_tasks queue.
+worker via arq.
 """
 
 import re
@@ -12,9 +12,10 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from apps.api.schemas import IngestResponse
-from src.database.repositories import DocumentRepository, ProcessingTaskRepository
+from src.database.repositories import DocumentRepository
 from src.database.session import async_session_factory
 from src.observability.logging import get_logger
+from src.shared.events import enqueue_task
 from src.shared.types import Document
 
 def _sanitize_filename(filename: str) -> str:
@@ -45,7 +46,6 @@ async def ingest_text(
     try:
         async with async_session_factory() as session:
             repo = DocumentRepository(session)
-            task_repo = ProcessingTaskRepository(session)
 
             document = Document(
                 id=document_id,
@@ -55,11 +55,12 @@ async def ingest_text(
                 content_text=text,
             )
             await repo.create_document(document)
-            await task_repo.create(
-                task_type="document.ingest_text",
-                payload={"document_id": document_id, "content_text": text, "title": title},
-            )
             await session.commit()
+
+        await enqueue_task(
+            "document.ingest_text",
+            {"document_id": document_id, "content_text": text, "title": title},
+        )
 
         return IngestResponse(
             document_id=document_id,
@@ -127,7 +128,6 @@ async def ingest_file(
 
         async with async_session_factory() as session:
             repo = DocumentRepository(session)
-            task_repo = ProcessingTaskRepository(session)
 
             document = Document(
                 id=document_id,
@@ -143,13 +143,12 @@ async def ingest_file(
                 },
             )
             await repo.create_document(document)
-
-            payload = {"document_id": document_id, "s3_key": s3_key}
-            await task_repo.create(
-                task_type="document.ingest",
-                payload=payload,
-            )
             await session.commit()
+
+        await enqueue_task(
+            "document.ingest",
+            {"document_id": document_id, "s3_key": s3_key},
+        )
 
         return IngestResponse(
             document_id=document_id,

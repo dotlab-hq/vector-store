@@ -8,7 +8,6 @@ from src.indexing.embeddings import embeddings
 from src.indexing.qdrant.qdrant_store import QdrantVectorStore
 from src.observability.logging import get_logger
 from src.retrieval.hybrid.hybrid_retriever import HybridRetriever
-from src.vector_stores.scheduler import VectorStoreScheduler
 
 logger = get_logger()
 
@@ -17,7 +16,6 @@ qdrant_store: QdrantVectorStore | None = None
 bm25_store: Bm25Store | None = None
 embedder: OpenAIEmbeddings | None = None
 _workflow = None
-_scheduler: VectorStoreScheduler | None = None
 
 
 def init_dependencies() -> None:
@@ -91,19 +89,6 @@ async def rebuild_bm25() -> None:
         logger.info("bm25_rebuilt", chunk_count=count)
     except Exception as exc:
         logger.warning("bm25_rebuild_failed", error=str(exc))
-
-
-def init_vector_store_scheduler() -> None:
-    """Initialize the background vector store scheduler (worker + cron)."""
-    global _scheduler
-    _scheduler = VectorStoreScheduler()
-
-
-def get_scheduler() -> VectorStoreScheduler:
-    """Return the vector store scheduler. Must be called after init_vector_store_scheduler."""
-    if _scheduler is None:
-        raise RuntimeError("VectorStoreScheduler not initialized")
-    return _scheduler
 
 
 def get_workflow():

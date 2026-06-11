@@ -50,14 +50,6 @@ class _FakeEngine:
         return _FakeEngineBegin()
 
 
-class _FakeScheduler:
-    def start(self):
-        return None
-
-    async def stop(self):
-        return None
-
-
 class _FakeWorkflow:
     async def ainvoke(self, state):
         return {
@@ -449,7 +441,6 @@ class ApiEndpointTests(unittest.TestCase):
         self.addCleanup(self.stack.close)
 
         fake_engine = _FakeEngine()
-        fake_scheduler = _FakeScheduler()
         fake_workflow = _FakeWorkflow()
         fake_service = _FakeVectorStoreService()
 
@@ -458,13 +449,7 @@ class ApiEndpointTests(unittest.TestCase):
             patch.object(api_main, "init_dependencies", lambda: None)
         )
         self.stack.enter_context(
-            patch.object(api_main, "init_vector_store_scheduler", lambda: None)
-        )
-        self.stack.enter_context(
             patch.object(api_main, "get_workflow", lambda: fake_workflow)
-        )
-        self.stack.enter_context(
-            patch.object(api_main, "get_scheduler", lambda: fake_scheduler)
         )
 
         self.stack.enter_context(

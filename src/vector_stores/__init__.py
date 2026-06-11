@@ -10,7 +10,7 @@ from src.vector_stores.repository import (
     VectorStoreRepository,
 )
 from src.vector_stores.service import VectorStoreService
-from src.vector_stores.scheduler import VectorStoreScheduler
+from src.vector_stores.scheduler import VectorStoreScheduler  # noqa: F401 (kept for backward compat)
 
 __all__ = [
     "VECTOR_STORE_OBJECT",
