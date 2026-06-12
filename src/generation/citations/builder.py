@@ -15,6 +15,7 @@ class CitationItem(BaseModel):
     title: str = ""
     snippet: str = ""
     relevance_score: float = 0.0
+    image_url: str | None = None  # URL to extracted diagram image
 
 
 class SourceItem(BaseModel):
@@ -26,6 +27,7 @@ class SourceItem(BaseModel):
     page: int | None = None
     title: str = ""
     url: str | None = None
+    image_url: str | None = None  # URL to extracted diagram image
 
 
 def _snippet(content: str, max_chars: int = 220) -> str:
@@ -85,6 +87,7 @@ class CitationBuilder:
                 title=document_name,
                 snippet=_snippet(chunk.content),
                 relevance_score=float(result.score),
+                image_url=chunk.image_url,
             )
             citations.append(citation)
 
@@ -96,6 +99,7 @@ class CitationBuilder:
                     page=chunk.page_number,
                     title=document_name,
                     url=None,
+                    image_url=chunk.image_url,
                 )
 
         return citations, list(sources_by_id.values())

@@ -51,6 +51,7 @@ async def retrieval(state: RAGState) -> dict:
                 rank=rank,
                 score=float(r.score),
                 content=r.chunk.content,
+                image_url=r.chunk.image_url,
             )
         )
 

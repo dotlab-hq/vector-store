@@ -264,6 +264,76 @@ async def document_ingest(
             chunks = chunker.build(raw.content, document_id)
             await repo.create_chunks(chunks)
 
+            # ── PDF Diagram Extraction ──────────────────────────────
+            diagram_chunks: list[Chunk] = []
+            suffix_lower = suffix.lower()
+            if suffix_lower == ".pdf" and settings.pdf_extract_diagrams:
+                try:
+                    from src.ingestion.parsers.pdf_diagram import PDFDiagramExtractor
+
+                    s3_client = S3Client()
+                    extractor = PDFDiagramExtractor()
+                    pages = await extractor.extract_all_pages(tmp_path)
+
+                    for page_data in pages:
+                        page_number = page_data["page_number"]
+                        for diagram in page_data.get("diagrams", []):
+                            image_bytes = diagram.get("image_bytes")
+                            description = diagram.get("description", "")
+                            region_idx = diagram.get("region_index", 0)
+                            mime_type = diagram.get("mime_type", "image/png")
+
+                            if not image_bytes or not description:
+                                continue
+
+                            s3_key = (
+                                f"diagrams/{document_id}/"
+                                f"page_{page_number}_region_{region_idx}.png"
+                            )
+
+                            await s3_client.upload(
+                                key=s3_key,
+                                data=image_bytes,
+                                content_type=mime_type,
+                            )
+                            logger.info(
+                                "diagram_uploaded",
+                                document_id=document_id,
+                                s3_key=s3_key,
+                                page=page_number,
+                                region=region_idx,
+                            )
+
+                            diagram_chunks.append(
+                                Chunk(
+                                    id=f"{document_id}_diag_p{page_number}_r{region_idx}",
+                                    document_id=document_id,
+                                    content=description,
+                                    page_number=page_number,
+                                    position=100_000 + page_number * 100 + region_idx,
+                                    section="diagram",
+                                    image_url=s3_key,
+                                )
+                            )
+
+                    if diagram_chunks:
+                        await repo.create_chunks(diagram_chunks)
+                        chunks.extend(diagram_chunks)
+                        logger.info(
+                            "diagram_chunks_created",
+                            document_id=document_id,
+                            count=len(diagram_chunks),
+                        )
+                except ImportError:
+                    logger.debug("pymupdf_not_available_skipping_diagrams")
+                except Exception as exc:
+                    logger.warning(
+                        "diagram_extraction_failed",
+                        document_id=document_id,
+                        error=str(exc),
+                        exc_info=True,
+                    )
+
             indexer = Indexer(session, embeddings, qdrant_store, bm25_store)
             await indexer.index_document(document_id)
 

@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 from fastapi import APIRouter, HTTPException, Request
@@ -20,6 +21,7 @@ from src.database.session import async_session_factory
 from src.generation.citations import CitationBuilder
 from src.graph.state.schemas import RAGState
 from src.observability.logging import get_logger
+from src.storage.s3.client import S3Client
 
 logger = get_logger()
 router = APIRouter()
@@ -47,6 +49,26 @@ async def _build_document_info(
     except Exception as exc:
         logger.warning("doc_info_lookup_failed", error=str(exc))
         return {}, {}
+
+
+async def _resolve_image_urls(
+    image_urls: list[str | None],
+) -> list[str | None]:
+    """Convert S3 diagram keys to presigned GET URLs in parallel."""
+    try:
+        s3 = S3Client()
+    except Exception:
+        return image_urls
+
+    async def _resolve_one(key: str | None) -> str | None:
+        if not key:
+            return None
+        try:
+            return await s3.get_presigned_url(key)
+        except Exception:
+            return key
+
+    return list(await asyncio.gather(*[_resolve_one(u) for u in image_urls]))
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -85,6 +107,13 @@ async def query_rag(request: QueryRequest, http_request: Request) -> QueryRespon
     citation_builder = CitationBuilder(document_titles)
     citations, sources = citation_builder.build(state.reranked_results)
 
+    # Resolve S3 diagram keys to presigned URLs
+    citation_image_urls = await _resolve_image_urls([c.image_url for c in citations])
+    source_image_urls = await _resolve_image_urls([s.image_url for s in sources])
+    chunk_image_urls = await _resolve_image_urls(
+        [rc.image_url for rc in state.retrieved_chunks]
+    )
+
     api_citations = [
         ApiCitationItem(
             id=c.id,
@@ -96,8 +125,9 @@ async def query_rag(request: QueryRequest, http_request: Request) -> QueryRespon
             title=c.title,
             snippet=c.snippet,
             relevance_score=c.relevance_score,
+            image_url=citation_image_urls[idx],
         )
-        for c in citations
+        for idx, c in enumerate(citations)
     ]
     # Build base URL for presigned download links
     base_url = str(http_request.base_url).rstrip("/")
@@ -113,8 +143,9 @@ async def query_rag(request: QueryRequest, http_request: Request) -> QueryRespon
             download_url=f"{base_url}/documents/{s.document_id}/download"
             if document_s3_keys.get(s.document_id)
             else None,
+            image_url=source_image_urls[idx],
         )
-        for s in sources
+        for idx, s in enumerate(sources)
     ]
 
     # Assemble retrieval block
@@ -128,8 +159,9 @@ async def query_rag(request: QueryRequest, http_request: Request) -> QueryRespon
                 rank=rc.rank,
                 score=rc.score,
                 content=rc.content,
+                image_url=chunk_image_urls[idx],
             )
-            for rc in state.retrieved_chunks
+            for idx, rc in enumerate(state.retrieved_chunks)
         ],
         reranked_chunks=[
             RerankedChunk(

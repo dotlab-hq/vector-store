@@ -27,6 +27,10 @@ _MIGRATIONS: list[tuple[str, str]] = [
         "vector_stores",
         "description VARCHAR(512)",
     ),
+    (
+        "chunks",
+        "image_url VARCHAR(1024)",
+    ),
 ]
 
 

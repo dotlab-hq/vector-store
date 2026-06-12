@@ -90,6 +90,23 @@ class S3Client:
                     f"{response.text[:500]}"
                 )
 
+    async def get_presigned_url(
+        self, key: str, expires_in: int | None = None
+    ) -> str:
+        """Generate a presigned GET URL for an S3 object."""
+        expiry = expires_in if expires_in is not None else settings.s3_presign_expiry
+        url = await self._run_sync(
+            self._client.generate_presigned_url,
+            "get_object",
+            Params={
+                "Bucket": self._bucket,
+                "Key": key,
+            },
+            ExpiresIn=expiry,
+            HttpMethod="GET",
+        )
+        return url
+
     async def download(self, key: str) -> bytes:
         """Download raw bytes from S3."""
         try:

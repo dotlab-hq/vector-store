@@ -19,6 +19,7 @@ class CitationItem(BaseModel):
     title: str = ""
     snippet: str = ""
     relevance_score: float = 0.0
+    image_url: Optional[str] = None  # URL to extracted diagram image
 
 
 class SourceItem(BaseModel):
@@ -40,6 +41,7 @@ class RetrievedChunk(BaseModel):
     rank: int
     score: float
     content: str
+    image_url: Optional[str] = None  # URL to extracted diagram image
 
 
 class RerankedChunk(BaseModel):

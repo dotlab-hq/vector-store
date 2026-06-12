@@ -78,6 +78,7 @@ class DocumentRepository:
                 metadata_json=json.dumps(c.metadata),
                 vector_store_id=c.vector_store_id,
                 attributes_json=json.dumps(c.attributes),
+                image_url=c.image_url,
             )
             for c in chunks
         ]

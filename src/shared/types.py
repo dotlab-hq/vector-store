@@ -39,6 +39,7 @@ class Chunk(BaseModel):
     metadata: dict = Field(default_factory=dict)
     vector_store_id: str | None = None
     attributes: dict = Field(default_factory=dict)
+    image_url: str | None = None  # S3 URL for extracted diagrams/images
 
 
 class RetrievalResult(BaseModel):

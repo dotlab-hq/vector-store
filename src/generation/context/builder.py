@@ -34,7 +34,10 @@ class ContextBuilder:
             if token_count + chunk_tokens > self.max_tokens:
                 break
 
-            context_parts.append(f"[{idx}] (chunk_id: {result.chunk.id})\n{content}")
+            header = f"[{idx}] (chunk_id: {result.chunk.id})"
+            if result.chunk.image_url:
+                header += f"\n[diagram_image: {result.chunk.image_url}]"
+            context_parts.append(f"{header}\n{content}")
             supporting.append(result.chunk.id)
             token_count += chunk_tokens
 

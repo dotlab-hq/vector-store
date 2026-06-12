@@ -1,0 +1,28 @@
+# Worker image — includes all heavy ML / document-parsing dependencies.
+# Expected size: ~2–3 GB (PyTorch, sentence-transformers, docling, pymupdf, etc.).
+
+FROM python:3.14-slim AS builder
+WORKDIR /app
+
+RUN pip install --no-cache-dir uv
+
+COPY pyproject.toml ./
+RUN uv sync --no-cache --no-install-project --extra worker
+
+FROM python:3.14-slim AS production
+WORKDIR /app
+
+RUN pip install --no-cache-dir uv
+
+COPY --from=builder /app/.venv ./.venv
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy ALL source — the worker needs everything (ingestion, indexing, graph, …)
+COPY src/   ./src/
+COPY apps/  ./apps/
+COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["worker"]

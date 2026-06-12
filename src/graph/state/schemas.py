@@ -13,6 +13,7 @@ class RetrievedChunkSnapshot(BaseModel):
     rank: int
     score: float
     content: str
+    image_url: str | None = None  # URL to extracted diagram image
 
 
 class RerankedChunkSnapshot(BaseModel):

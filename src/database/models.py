@@ -67,6 +67,7 @@ class ChunkModel(Base):
         String, nullable=True, index=True
     )
     attributes_json: Mapped[str] = mapped_column(Text, default="{}")
+    image_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     document: Mapped["DocumentModel"] = relationship(back_populates="chunks")
     children: Mapped[list["ChunkModel"]] = relationship(back_populates="parent")

@@ -166,6 +166,7 @@ class QdrantVectorStore(VectorStore):
             "section": chunk.section,
             "vector_store_id": chunk.vector_store_id or "",
             "attributes": chunk.attributes,
+            "image_url": chunk.image_url or "",
         }
 
     @staticmethod
@@ -181,6 +182,7 @@ class QdrantVectorStore(VectorStore):
             section=payload.get("section", ""),
             vector_store_id=payload.get("vector_store_id") or None,
             attributes=payload.get("attributes", {}),
+            image_url=payload.get("image_url") or None,
         )
 
     # ------------------------------------------------------------------

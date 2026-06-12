@@ -48,6 +48,7 @@ class Indexer:
                 section=cm.section,
                 vector_store_id=cm.vector_store_id,
                 attributes=json.loads(cm.attributes_json or "{}"),
+                image_url=getattr(cm, "image_url", None),
             )
             for cm in chunks_models
         ]
