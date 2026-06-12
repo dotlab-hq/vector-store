@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from langchain_openai import OpenAIEmbeddings
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.database.repositories import DocumentRepository
 from src.indexing.bm25.bm25_store import Bm25Store
 from src.indexing.qdrant.qdrant_store import QdrantVectorStore
@@ -95,6 +96,31 @@ class Indexer:
             document_id=document_id,
             total_chunks=len(chunks),
         )
+
+        # Ingest into Knowledge Graph (Neo4j) if enabled
+        if settings.neo4j_enabled:
+            try:
+                from src.graph.knowledge.graph_store import KnowledgeGraphStore
+                from src.graph.knowledge.neo4j_client import Neo4jClient
+
+                neo4j_client = Neo4jClient()
+                kg = KnowledgeGraphStore(neo4j_client)
+                chunk_dicts = [
+                    {"id": c.id, "content": c.content} for c in chunks
+                ]
+                await kg.ingest_document(document_id, chunk_dicts)
+                await neo4j_client.close()
+                logger.info(
+                    "document_ingested_to_kg",
+                    document_id=document_id,
+                    chunk_count=len(chunk_dicts),
+                )
+            except Exception as e:
+                logger.warning(
+                    "kg_ingestion_failed",
+                    document_id=document_id,
+                    error=str(e),
+                )
 
     async def search_hybrid(
         self,

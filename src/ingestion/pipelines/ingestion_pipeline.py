@@ -15,7 +15,7 @@ from src.ingestion.media.processor import MediaProcessingService
 from src.ingestion.metadata.extractor import MetadataExtractor
 from src.indexing.indexer import Indexer
 from src.observability.logging import get_logger
-from src.shared.types import Chunk, Document
+from src.shared.types import Document
 
 logger = get_logger()
 
@@ -132,11 +132,8 @@ class IngestionPipeline:
 
         await self.session.commit()
 
-        # Index chunks into Qdrant + BM25 (so they're searchable)
+        # Index chunks into Qdrant + BM25 + Knowledge Graph (if enabled)
         await self._index_chunks(document.id)
-
-        # Ingest into Knowledge Graph if enabled
-        await self._ingest_to_kg(document.id, chunks)
 
         return document
 
@@ -282,26 +279,7 @@ class IngestionPipeline:
         await self.repo.create_chunks(chunks)
         await self.session.commit()
 
-        # Index chunks into FAISS + BM25
+        # Index chunks into Qdrant + BM25 + Knowledge Graph (if enabled)
         await self._index_chunks(document.id)
 
-        # Ingest into Knowledge Graph if enabled
-        await self._ingest_to_kg(document.id, chunks)
-
         return document
-
-    async def _ingest_to_kg(self, document_id: str, chunks: list[Chunk]) -> None:
-        """Ingest chunks into Neo4j knowledge graph if enabled."""
-        if not settings.neo4j_enabled:
-            return
-        try:
-            from src.graph.knowledge.graph_store import KnowledgeGraphStore
-            from src.graph.knowledge.neo4j_client import Neo4jClient
-
-            neo4j = Neo4jClient()
-            kg = KnowledgeGraphStore(neo4j)
-            chunk_dicts = [{"id": c.id, "content": c.content} for c in chunks]
-            await kg.ingest_document(document_id, chunk_dicts)
-            await neo4j.close()
-        except Exception as e:
-            logger.warning("kg_ingestion_failed", document_id=document_id, error=str(e))
