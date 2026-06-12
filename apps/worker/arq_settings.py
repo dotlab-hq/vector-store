@@ -89,10 +89,8 @@ async def _complete_vs_files_for_document(
 ) -> None:
     """Complete pending VS files after a document is ingested."""
     async with async_session_factory() as session:
-        from src.database.repositories import (
-            VectorStoreFileBatchRepository,
-            VectorStoreFileRepository,
-        )
+        from src.database.repositories import VectorStoreFileRepository
+        from src.vector_stores.repository import VectorStoreFileBatchRepository
 
         vf_repo = VectorStoreFileRepository(session)
         vfb_repo = VectorStoreFileBatchRepository(session)
@@ -168,9 +166,9 @@ def _crash_safe(
             if vf_id:
                 try:
                     async with async_session_factory() as session:
-                        from src.database.repositories import (
+                        from src.database.repositories import VectorStoreFileRepository
+                        from src.vector_stores.repository import (
                             VectorStoreFileBatchRepository,
-                            VectorStoreFileRepository,
                         )
 
                         vf_repo = VectorStoreFileRepository(session)
@@ -484,7 +482,7 @@ async def vs_file_process(
         from sqlalchemy import update as sa_update
 
         from src.database.repositories import VectorStoreFileRepository
-        from src.database.repositories import VectorStoreRepository
+        from src.vector_stores.repository import VectorStoreRepository
 
         vf_repo = VectorStoreFileRepository(session)
         vs_repo = VectorStoreRepository(session)
@@ -553,7 +551,7 @@ async def vs_file_process(
         await vf_repo.update_store_file_counts(vf.vector_store_id)
         # Update batch counts + status if this file belongs to a batch
         if vf.batch_id is not None:
-            from src.database.repositories import (
+            from src.vector_stores.repository import (
                 VectorStoreFileBatchRepository,
             )
             vfb_repo = VectorStoreFileBatchRepository(session)

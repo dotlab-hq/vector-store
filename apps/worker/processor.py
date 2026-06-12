@@ -364,7 +364,7 @@ class TaskProcessor:
     async def _handle_vs_file_process(self, session, payload: dict) -> None:
         """Tag chunks with vector_store_id. Mirrors old VectorStoreWorker._process_file."""
         from src.database.repositories import VectorStoreFileRepository
-        from src.database.repositories import VectorStoreRepository
+        from src.vector_stores.repository import VectorStoreRepository
 
         vf_id = payload["vector_store_file_id"]
         vf_repo = VectorStoreFileRepository(session)
