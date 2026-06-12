@@ -1,41 +1,35 @@
-# Multi-stage Dockerfile for Agentic RAG
-
-# Stage 1: Builder
 FROM python:3.14-slim AS builder
-
 WORKDIR /app
 
-# Install uv
 RUN pip install --no-cache-dir uv
 
-# Copy dependency files
 COPY pyproject.toml ./
+RUN uv sync --no-cache --no-install-project --extra api
 
-# Install dependencies
-RUN uv sync --no-cache --no-install-project
-
-# Stage 2: Production
 FROM python:3.14-slim AS production
-
 WORKDIR /app
 
-# Install uv
 RUN pip install --no-cache-dir uv
 
-# Copy virtual environment from builder
 COPY --from=builder /app/.venv ./.venv
-
-# Copy application code
-COPY src/ ./src/
-COPY apps/ ./apps/
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Set PATH to use venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Expose API port
-EXPOSE 8000
+COPY src/config/       ./src/config/
+COPY src/database/     ./src/database/
+COPY src/generation/   ./src/generation/
+COPY src/graph/        ./src/graph/
+COPY src/indexing/     ./src/indexing/
+COPY src/llm/          ./src/llm/
+COPY src/observability/ ./src/observability/
+COPY src/retrieval/    ./src/retrieval/
+COPY src/shared/       ./src/shared/
+COPY src/storage/      ./src/storage/
+COPY src/vector_stores/ ./src/vector_stores/
+COPY apps/api/         ./apps/api/
+COPY entrypoint.sh     /entrypoint.sh
 
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["api"]
