@@ -429,6 +429,13 @@ class TaskProcessor:
 
         await vf_repo.mark_completed(vf_id)
         await vf_repo.update_store_file_counts(vf.vector_store_id)
+        # Update batch counts + status if this file belongs to a batch
+        if vf.batch_id is not None:
+            from src.vector_stores.repository import (
+                VectorStoreFileBatchRepository,
+            )
+            vfb_repo = VectorStoreFileBatchRepository(session)
+            await vfb_repo.update_counts_and_status(vf.batch_id)
 
         logger.info(
             "vs_file_processed",
@@ -460,6 +467,7 @@ async def _complete_vs_files_for_document(
 ) -> None:
     """Complete pending VS files. Raises on failure so the task retries."""
     from src.database.repositories import VectorStoreFileRepository
+    from src.vector_stores.repository import VectorStoreFileBatchRepository
 
     vf_repo = VectorStoreFileRepository(session)
     doc_repo = DocumentRepository(session)
@@ -473,6 +481,21 @@ async def _complete_vs_files_for_document(
         if qdrant_store is not None:
             await qdrant_store.update_chunks_vector_store_id(document_id, store_id)
         await vf_repo.update_store_file_counts(store_id)
+        # Also update batch counts for any batches containing this document's files
+        from sqlalchemy import select as sa_select
+        from src.database.models import VectorStoreFileModel
+
+        batch_result = await session.execute(
+            sa_select(VectorStoreFileModel.batch_id).where(
+                VectorStoreFileModel.source_document_id == document_id,
+                VectorStoreFileModel.vector_store_id == store_id,
+                VectorStoreFileModel.batch_id.is_not(None),
+            ).distinct()
+        )
+        batch_ids = [row[0] for row in batch_result.fetchall()]
+        vfb_repo = VectorStoreFileBatchRepository(session)
+        for batch_id in batch_ids:
+            await vfb_repo.update_counts_and_status(batch_id)
 
     logger.info(
         "vs_files_completed_for_document",

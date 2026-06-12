@@ -94,6 +94,31 @@ class VectorStoreCron:
             promoted = await vf_repo.sweep_failed_for_retry(max_retries=max_retries)
             if promoted:
                 logger.info("vs_cron_promoted", count=promoted)
+                # Re-enqueue arq tasks so the worker picks them up
+                try:
+                    from src.shared.events import enqueue_task
+
+                    # Fetch the newly-promoted pending rows to get their IDs
+                    from sqlalchemy import select as sa_select
+                    from src.database.models import (
+                        VectorStoreFileModel,
+                    )
+
+                    pending_result = await session.execute(
+                        sa_select(VectorStoreFileModel.id).where(
+                            VectorStoreFileModel.status == "pending",
+                            VectorStoreFileModel.next_attempt_at.is_(None),
+                            VectorStoreFileModel.locked_at.is_(None),
+                        ).limit(promoted * 2)  # safety margin
+                    )
+                    pending_ids = [row[0] for row in pending_result.fetchall()]
+                    for vf_id in pending_ids:
+                        await enqueue_task(
+                            "vs_file.process",
+                            {"vector_store_file_id": vf_id},
+                        )
+                except Exception:
+                    logger.exception("vs_cron_re_enqueue_failed")
 
             # 2. Mark permanently failed rows
             marked = await vf_repo.mark_permanently_failed(max_retries=max_retries)

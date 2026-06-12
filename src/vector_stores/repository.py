@@ -716,3 +716,25 @@ class VectorStoreFileBatchRepository:
             .values(status="completed", completed_at=_utcnow())
         )
         await self.session.flush()
+
+    async def update_counts_and_status(self, batch_id: str) -> dict[str, int]:
+        """Recompute file_counts_json AND derive+write the batch status.
+
+        Returns the updated counts dict.
+        """
+        counts = await self.update_file_counts(batch_id)
+        new_status = await self.derive_status(batch_id)
+        batch = await self.get(batch_id)
+        if batch is not None and batch.status != new_status:
+            update_values: dict[str, object] = {"status": new_status}
+            if new_status == "completed":
+                update_values["completed_at"] = _utcnow()
+            elif new_status == "cancelled":
+                update_values["cancelled_at"] = _utcnow()
+            await self.session.execute(
+                update(VectorStoreFileBatchModel)
+                .where(VectorStoreFileBatchModel.id == batch_id)
+                .values(**update_values)
+            )
+            await self.session.flush()
+        return counts

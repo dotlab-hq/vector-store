@@ -709,19 +709,42 @@ class VectorStoreService:
                     store_id=store_id,
                 )
                 continue
+            # Determine initial status based on document readiness
+            # (mirrors the logic in attach_file / _attach_files)
+            initial_status = (
+                "completed" if await self._is_document_ready(doc) else "pending"
+            )
             vf = VectorStoreFileModel(
                 id=_new_file_id(),
                 vector_store_id=store_id,
                 source_document_id=cfg.file_id,
-                status="pending",
+                status=initial_status,
                 bytes=doc.bytes or 0,
                 attributes_json=json.dumps(cfg.attributes or {}),
                 batch_id=batch.id,
+                completed_at=_utcnow() if initial_status == "completed" else None,
             )
             await self.vf_repo.create(vf)
+            if initial_status == "completed":
+                # Tag chunks immediately — no background work needed
+                await self.doc_repo.update_chunks_vector_store_id(
+                    cfg.file_id, store_id
+                )
+                from apps.api.dependencies import qdrant_store as _qs
+
+                if _qs is not None:
+                    await _qs.update_chunks_vector_store_id(cfg.file_id, store_id)
+            else:
+                # Enqueue arq background task to process later
+                from src.shared.events import enqueue_task
+
+                await enqueue_task(
+                    "vs_file.process",
+                    {"vector_store_file_id": vf.id},
+                )
 
         await self.vf_repo.update_store_file_counts(store_id)
-        counts = await self.vfb_repo.update_file_counts(batch.id)
+        counts = await self.vfb_repo.update_counts_and_status(batch.id)
         await self.vs_repo.update(store_id, last_active_at=_utcnow())
         await self.session.commit()
 

@@ -89,9 +89,13 @@ async def _complete_vs_files_for_document(
 ) -> None:
     """Complete pending VS files after a document is ingested."""
     async with async_session_factory() as session:
-        from src.database.repositories import VectorStoreFileRepository
+        from src.database.repositories import (
+            VectorStoreFileBatchRepository,
+            VectorStoreFileRepository,
+        )
 
         vf_repo = VectorStoreFileRepository(session)
+        vfb_repo = VectorStoreFileBatchRepository(session)
         doc_repo = DocumentRepository(session)
 
         affected_store_ids = await vf_repo.complete_pending_for_document(document_id)
@@ -106,6 +110,24 @@ async def _complete_vs_files_for_document(
                     document_id, store_id
                 )
             await vf_repo.update_store_file_counts(store_id)
+            # Also update batch counts for any batches in this store
+            # that contain files for this document.
+            from src.database.models import (
+                VectorStoreFileBatchModel,
+                VectorStoreFileModel,
+            )
+            from sqlalchemy import select as sa_select
+
+            batch_result = await session.execute(
+                sa_select(VectorStoreFileModel.batch_id).where(
+                    VectorStoreFileModel.source_document_id == document_id,
+                    VectorStoreFileModel.vector_store_id == store_id,
+                    VectorStoreFileModel.batch_id.is_not(None),
+                ).distinct()
+            )
+            batch_ids = [row[0] for row in batch_result.fetchall()]
+            for batch_id in batch_ids:
+                await vfb_repo.update_counts_and_status(batch_id)
 
         await session.commit()
         logger.info(
@@ -147,13 +169,20 @@ def _crash_safe(
                 try:
                     async with async_session_factory() as session:
                         from src.database.repositories import (
+                            VectorStoreFileBatchRepository,
                             VectorStoreFileRepository,
                         )
 
                         vf_repo = VectorStoreFileRepository(session)
+                        vfb_repo = VectorStoreFileBatchRepository(session)
+                        vf_row = await vf_repo.get(vf_id)
                         await vf_repo.mark_failed(
                             vf_id, failure_reason="handler_crashed"
                         )
+                        if vf_row is not None and vf_row.batch_id is not None:
+                            await vfb_repo.update_counts_and_status(
+                                vf_row.batch_id
+                            )
                         await session.commit()
                 except Exception:
                     logger.exception(
@@ -522,6 +551,13 @@ async def vs_file_process(
 
         await vf_repo.mark_completed(vf.id)
         await vf_repo.update_store_file_counts(vf.vector_store_id)
+        # Update batch counts + status if this file belongs to a batch
+        if vf.batch_id is not None:
+            from src.database.repositories import (
+                VectorStoreFileBatchRepository,
+            )
+            vfb_repo = VectorStoreFileBatchRepository(session)
+            await vfb_repo.update_counts_and_status(vf.batch_id)
         await session.commit()
 
         logger.info(
