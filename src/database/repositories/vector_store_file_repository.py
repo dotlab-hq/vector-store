@@ -16,7 +16,7 @@ class VectorStoreFileRepository:
         Returns the distinct ``vector_store_id`` values that were touched so the
         caller can refresh counts / tags on those stores.
         """
-        now = datetime.now(UTC)
+        now = datetime.now(UTC).replace(tzinfo=None)
 
         # Fetch pending files to discover affected stores
         pending = await self.session.execute(
