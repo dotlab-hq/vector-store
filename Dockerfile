@@ -14,17 +14,7 @@ RUN pip install --no-cache-dir uv
 COPY --from=builder /app/.venv ./.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY src/config/       ./src/config/
-COPY src/database/     ./src/database/
-COPY src/generation/   ./src/generation/
-COPY src/graph/        ./src/graph/
-COPY src/indexing/     ./src/indexing/
-COPY src/llm/          ./src/llm/
-COPY src/observability/ ./src/observability/
-COPY src/retrieval/    ./src/retrieval/
-COPY src/shared/       ./src/shared/
-COPY src/storage/      ./src/storage/
-COPY src/vector_stores/ ./src/vector_stores/
+COPY src/              ./src/
 COPY apps/api/         ./apps/api/
 COPY entrypoint.sh     /entrypoint.sh
 
