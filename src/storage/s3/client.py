@@ -65,30 +65,47 @@ class S3Client:
     async def _presigned_put_upload(
         self, key: str, data: bytes, content_type: str
     ) -> None:
-        """Generate a presigned PUT URL and upload data via httpx."""
-        presigned_url = await self._run_sync(
-            self._client.generate_presigned_url,
-            "put_object",
-            Params={
-                "Bucket": self._bucket,
-                "Key": key,
-                "ContentType": content_type,
-            },
-            ExpiresIn=settings.s3_presign_expiry,
-            HttpMethod="PUT",
-        )
-        async with httpx.AsyncClient() as client:
-            response = await client.put(
-                presigned_url,
-                content=data,
-                headers={"Content-Type": content_type},
-                timeout=30.0,
+        """Generate a presigned PUT URL and upload data via httpx.
+
+        Falls back to boto3 ``put_object`` when the provider rejects the
+        presigned URL (e.g. Supabase Storage returns 403 "Missing signature").
+        """
+        try:
+            presigned_url = await self._run_sync(
+                self._client.generate_presigned_url,
+                "put_object",
+                Params={
+                    "Bucket": self._bucket,
+                    "Key": key,
+                    "ContentType": content_type,
+                },
+                ExpiresIn=settings.s3_presign_expiry,
+                HttpMethod="PUT",
             )
-            if response.status_code >= 400:
-                raise RuntimeError(
-                    f"S3 presigned PUT failed: HTTP {response.status_code} "
-                    f"{response.text[:500]}"
+            async with httpx.AsyncClient() as client:
+                response = await client.put(
+                    presigned_url,
+                    content=data,
+                    headers={"Content-Type": content_type},
+                    timeout=30.0,
                 )
+                if response.status_code >= 400:
+                    raise RuntimeError(
+                        f"S3 presigned PUT failed: HTTP {response.status_code} "
+                        f"{response.text[:500]}"
+                    )
+        except Exception:
+            logger.warning(
+                "s3_presigned_put_failed_fallback_to_boto3",
+                key=key,
+            )
+            await self._run_sync(
+                self._client.put_object,
+                Bucket=self._bucket,
+                Key=key,
+                Body=data,
+                ContentType=content_type,
+            )
 
     async def get_presigned_url(
         self, key: str, expires_in: int | None = None
